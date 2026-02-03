@@ -73,62 +73,6 @@
             opacity: 0.6;
             cursor: wait;
         }
-        #paper-template {
-            width: 794px;
-            height: 1123px;
-            padding: 60px 80px;
-            background: white;
-            position: absolute;
-            left: -9999px;
-            top: 0;
-            box-sizing: border-box;
-            color: black;
-            line-height: 1.3;
-        }
-        .a4-header {
-            margin-left: auto;
-            width: 60%;
-            text-align: right;
-        }
-        .a4-header p {
-            margin: 2px 0;
-            font-size: 14pt;
-            font-family: "Times New Roman", serif;
-        }
-        .line-under {
-            border-bottom: 1px solid black;
-            display: inline-block;
-            width: 100%;
-            min-height: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .small-hint {
-            font-size: 8pt;
-            display: block;
-            text-align: center;
-            margin-top: -2px;
-        }
-        .a4-title {
-            text-align: center;
-            margin-top: 50px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-        .a4-content {
-            margin-top: 30px;
-            text-indent: 40px;
-            font-size: 13pt;
-            min-height: 300px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .a4-footer {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
         .case-image {
             width: 100%;
             border: 1px solid #ddd;
@@ -144,6 +88,90 @@
         }
         .badge-new { background: #e3f2fd; color: #1565c0; }
         .badge-court { background: #fff3cd; color: #856404; }
+
+        /* ---- ОФОРМЛЕНИЕ A4, как на втором скрине ---- */
+        #paper-template {
+            width: 794px;              /* A4 при 96 dpi */
+            height: 1123px;
+            padding: 60px;
+            background: #ffffff;
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            box-sizing: border-box;
+            color: #000;
+            font-family: "Times New Roman", serif;
+            font-size: 12pt;
+        }
+        .a4-top {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .a4-top-right {
+            width: 60%;
+            text-align: right;
+        }
+        .a4-court-line {
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            min-width: 250px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .a4-label {
+            font-weight: bold;
+        }
+        .a4-underline {
+            border-bottom: 1px solid #000;
+            min-width: 250px;
+            display: inline-block;
+            text-align: left;
+            padding: 0 3px;
+        }
+        .a4-row {
+            margin-top: 8px;
+        }
+        .a4-title-block {
+            text-align: center;
+            margin-top: 60px;
+            font-weight: bold;
+            text-transform: none;
+        }
+        .a4-title-main {
+            font-size: 14pt;
+        }
+        .a4-body {
+            margin-top: 20px;
+        }
+        .a4-body-text {
+            margin-top: 10px;
+            text-indent: 40px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .a4-footer-block {
+            margin-top: 40px;
+        }
+        .a4-footer-list {
+            margin-top: 10px;
+        }
+        .a4-sign-row {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .a4-sign-col {
+            width: 30%;
+            text-align: center;
+        }
+        .a4-sign-line {
+            border-bottom: 1px solid #000;
+            min-height: 25px;
+        }
+        .a4-sign-hint {
+            font-size: 9pt;
+        }
     </style>
 </head>
 <body>
@@ -170,7 +198,7 @@
                 </select>
             </div>
             <div>
-                <label>Тип процесса:</label>
+                <label>Тип процесса (наименование процесса):</label>
                 <select id="f_type">
                     <optgroup label="1. Семейные споры">
                         <option>Иск о расторжении брака (развод)</option>
@@ -187,31 +215,31 @@
         <div class="form-grid">
             <div>
                 <label>ФИО Истца:</label>
-                <input type="text" id="f_istec" placeholder="Иванов И.И.">
+                <input type="text" id="f_istec" placeholder="Фамилия Имя Отчество">
 
                 <label>Адрес Истца:</label>
-                <input type="text" id="f_istec_addr" placeholder="г. Лос-Сантос, ул. Ленина">
+                <input type="text" id="f_istec_addr" placeholder="Указать адрес">
 
                 <label>Телефон Истца:</label>
-                <input type="text" id="f_istec_phone" placeholder="777-888">
+                <input type="text" id="f_istec_phone" placeholder="Указать номер телефона">
             </div>
             <div>
                 <label>ФИО Ответчика:</label>
-                <input type="text" id="f_otvet" placeholder="Петров П.П.">
+                <input type="text" id="f_otvet" placeholder="Фамилия Имя Отчество">
 
                 <label>Адрес Ответчика:</label>
-                <input type="text" id="f_otvet_addr" placeholder="г. Лос-Сантос, ул. Мира">
+                <input type="text" id="f_otvet_addr" placeholder="Указать адрес">
 
                 <label>Телефон Ответчика:</label>
-                <input type="text" id="f_otvet_phone" placeholder="555-444">
+                <input type="text" id="f_otvet_phone" placeholder="Указать номер телефона">
             </div>
         </div>
 
-        <label>Суть заявления:</label>
+        <label>Суть искового заявления:</label>
         <textarea id="f_text" rows="5" placeholder="Опишите ситуацию..."></textarea>
 
         <label>Ваша подпись (Фамилия И.О.):</label>
-        <input type="text" id="f_sign" placeholder="Иванов И.И.">
+        <input type="text" id="f_sign" placeholder="Фамилия И.О.">
 
         <button class="btn-send" onclick="generateAndSend()">СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)</button>
     </div>
@@ -236,74 +264,116 @@
     </div>
 </div>
 
-<!-- ШАБЛОН A4 ДЛЯ ГЕНЕРАЦИИ PNG -->
+<!-- ==== НОВЫЙ ШАБЛОН A4 КАК НА ВТОРОМ СКРИНЕ ==== -->
 <div id="paper-template">
-    <div class="a4-header">
-        <p>В <span id="p_court" class="line-under"></span></p>
-        <span class="small-hint">(наименование судебной инстанции)</span>
-        <div style="margin-top:20px">
-            <p>Истец: <span id="p_istec" class="line-under"></span></p>
-            <p>Адрес: <span id="p_istec_addr" class="line-under"></span></p>
-            <p>Телефон: <span id="p_istec_phone" class="line-under"></span></p>
-        </div>
-        <div style="margin-top:20px">
-            <p>Ответчик: <span id="p_otvet" class="line-under"></span></p>
-            <p>Адрес: <span id="p_otvet_addr" class="line-under"></span></p>
-            <p>Телефон: <span id="p_otvet_phone" class="line-under"></span></p>
+    <!-- Верхний правый блок -->
+    <div class="a4-top">
+        <div class="a4-top-right">
+            <div style="text-align:right;">В</div>
+            <div class="a4-row">
+                <span class="a4-court-line" id="p_court">УКАЗАТЬ САМ СУД</span>
+            </div>
+            <div class="a4-row" style="font-size:10pt;">
+                ( наименование судебной инстанции )
+            </div>
+
+            <div class="a4-row" style="margin-top:20px;">
+                <span class="a4-label">Истец:</span>
+                <span class="a4-underline" id="p_istec">ФАМИЛИЯ ИМЯ ОТЧЕСТВО</span>
+            </div>
+            <div class="a4-row">
+                <span class="a4-label">Адрес:</span>
+                <span class="a4-underline" id="p_istec_addr">УКАЗАТЬ АДРЕС</span>
+            </div>
+            <div class="a4-row">
+                <span class="a4-label">Телефон:</span>
+                <span class="a4-underline" id="p_istec_phone">УКАЗАТЬ НОМЕР ТЕЛЕФОНА</span>
+            </div>
+
+            <div class="a4-row" style="margin-top:20px;">
+                <span class="a4-label">Ответчик:</span>
+                <span class="a4-underline" id="p_otvet">ФАМИЛИЯ ИМЯ ОТЧЕСТВО</span>
+            </div>
+            <div class="a4-row">
+                <span class="a4-label">Адрес:</span>
+                <span class="a4-underline" id="p_otvet_addr">УКАЗАТЬ АДРЕС</span>
+            </div>
+            <div class="a4-row">
+                <span class="a4-label">Телефон:</span>
+                <span class="a4-underline" id="p_otvet_phone">УКАЗАТЬ НОМЕР ТЕЛЕФОНА</span>
+            </div>
         </div>
     </div>
 
-    <div class="a4-title">
-        Исковое заявление<br>о <span id="p_type"></span>
+    <!-- Заголовок "Исковое заявление" -->
+    <div class="a4-title-block">
+        <div class="a4-title-main">Исковое заявление</div>
+        <div>о <span id="p_type">НАИМЕНОВАНИЕ ПРОЦЕССА</span></div>
     </div>
 
-    <div class="a4-content" id="p_text"></div>
+    <!-- Основная часть -->
+    <div class="a4-body">
+        <div>Суть искового заявления.</div>
+        <div class="a4-body-text" id="p_text"></div>
+    </div>
 
-    <p style="font-size: 11pt; margin-top: 40px;">
-        На законных основаниях прошу Суд рассмотреть данное заявление.
-    </p>
-
-    <div class="a4-footer">
-        <div style="width: 200px; text-align: center;">
-            <div style="border-bottom: 1px solid black; min-height: 30px;"></div>
-            <span class="small-hint">( подпись )</span>
-        </div>
-        <div style="width: 200px; text-align: center;">
-            <div id="p_sign" style="border-bottom: 1px solid black; min-height: 30px; font-weight: bold;"></div>
-            <span class="small-hint">( расшифровка )</span>
-        </div>
+    <!-- Низ страницы -->
+    <div class="a4-footer-block">
         <div>
-            «<span id="p_day"></span>» <span id="p_month"></span> 2026 г.
+            На законных основаниях, изложенных Конституцией и иными нормативно‑правовыми актами,
+            прошу Суд рассмотреть данное моё исковое заявление и принять необходимые меры по
+            отношению к данному делу.
+        </div>
+
+        <div class="a4-footer-list">
+            <div>К Исковому заявлению прилагаю:</div>
+            <div>1. Копия документов, таких как: паспорт, медицинская карта, пакет лицензий</div>
+            <div>2. Квитанция об оплате госпошлины, согласно Закону «о принятии Исковых заявлений»</div>
+        </div>
+    </div>
+
+    <!-- Подписи и дата -->
+    <div class="a4-sign-row">
+        <div class="a4-sign-col">
+            <div class="a4-sign-line"></div>
+            <div class="a4-sign-hint">( подпись )</div>
+        </div>
+        <div class="a4-sign-col">
+            <div class="a4-sign-line" id="p_sign"></div>
+            <div class="a4-sign-hint">( расшифровка )</div>
+        </div>
+        <div style="width: 35%; text-align:right; font-size:11pt;">
+            «<span id="p_day">__</span>» <span id="p_month">______________</span> 20__ г.
         </div>
     </div>
 </div>
 
 <script>
-    // Привязка полей формы к шаблону A4
-    const fields = [
-        'court','istec','istec_addr','istec_phone',
-        'otvet','otvet_addr','otvet_phone','type','text','sign'
+    // Связка полей формы с шаблоном A4
+    const bindings = [
+        ['f_court', 'p_court'],
+        ['f_istec', 'p_istec'],
+        ['f_istec_addr', 'p_istec_addr'],
+        ['f_istec_phone', 'p_istec_phone'],
+        ['f_otvet', 'p_otvet'],
+        ['f_otvet_addr', 'p_otvet_addr'],
+        ['f_otvet_phone', 'p_otvet_phone'],
+        ['f_type', 'p_type'],
+        ['f_text', 'p_text'],
+        ['f_sign', 'p_sign']
     ];
 
-    fields.forEach(f => {
-        const inputEl = document.getElementById('f_' + f);
-        if (!inputEl) return;
-        inputEl.addEventListener('input', (e) => {
-            const target = document.getElementById('p_' + f);
-            if (target) target.innerText = e.target.value;
+    bindings.forEach(([from, to]) => {
+        const src = document.getElementById(from);
+        const dst = document.getElementById(to);
+        if (!src || !dst) return;
+
+        // начальное значение
+        dst.innerText = src.value;
+
+        src.addEventListener('input', e => {
+            dst.innerText = e.target.value;
         });
-    });
-
-    // Изначально заполняем суд и тип
-    document.getElementById('p_court').innerText = document.getElementById('f_court').value;
-    document.getElementById('p_type').innerText = document.getElementById('f_type').value;
-
-    document.getElementById('f_court').addEventListener('change', (e) => {
-        document.getElementById('p_court').innerText = e.target.value;
-    });
-
-    document.getElementById('f_type').addEventListener('change', (e) => {
-        document.getElementById('p_type').innerText = e.target.value;
     });
 
     async function generateAndSend() {
@@ -311,7 +381,6 @@
         btn.innerText = "Генерация PNG...";
         btn.disabled = true;
 
-        // Проверка обязательных полей
         const requiredIds = ['f_court','f_istec','f_otvet','f_text','f_sign'];
         for (const id of requiredIds) {
             const el = document.getElementById(id);
@@ -336,7 +405,6 @@
         const imageData = canvas.toDataURL("image/png");
 
         const courtType = document.getElementById('f_court').value;
-        console.log("DEBUG courtType:", courtType); // для проверки в браузере
 
         try {
             const response = await fetch('/save_case_image', {
@@ -353,8 +421,7 @@
                 alert("Иск отправлен! Номер дела: " + res.case_num);
                 location.reload();
             } else {
-                const text = await response.text();
-                console.error("SAVE ERROR:", text);
+                console.error("SAVE ERROR:", await response.text());
                 alert("Ошибка сохранения на сервере!");
                 btn.disabled = false;
                 btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";

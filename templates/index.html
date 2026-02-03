@@ -7,35 +7,34 @@
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; color: #2c3e50; }
         .nav { background: #1a237e; color: #fff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #c5a059; }
         .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; position: relative; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; position: relative; overflow: hidden; }
+        
+        /* Статусы-полоски */
+        .status-Новый { border-left: 8px solid #c5a059; }
+        .status-В-работе { border-left: 8px solid #3498db; }
+        .status-Завершен { border-left: 8px solid #27ae60; }
+
         .btn { background: #1a237e; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; }
         .btn-sm { padding: 6px 12px; font-size: 0.85em; }
-        .btn-warn { background: #c5a059; }
         .btn-danger { background: #c0392b; }
         .btn-success { background: #27ae60; }
+        
+        .search-box { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #c5a059; margin-bottom: 20px; font-size: 1.1em; outline: none; }
         .case-badge { background: #c5a059; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; margin-right: 10px; }
         input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .case-item { border-bottom: 1px solid #eee; padding: 20px 0; position: relative; }
-        .case-item:last-child { border-bottom: none; }
-        .judge-info { font-size: 0.85em; color: #1a237e; background: #eef2f7; padding: 10px; border-radius: 6px; margin-top: 10px; }
-        .verdict { border-left: 4px solid #27ae60; padding-left: 15px; margin-top: 10px; font-style: italic; }
+        .judge-info { font-size: 0.85em; color: #1a237e; background: #eef2f7; padding: 15px; border-radius: 6px; margin-top: 15px; }
+        .status-label { float: right; font-weight: bold; text-transform: uppercase; font-size: 0.75em; padding: 4px 10px; border-radius: 4px; background: #eee; }
     </style>
 </head>
 <body>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <script>alert("{{ message }}");</script>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
     <div class="nav">
         <h2>⚖️ ВЕРХОВНЫЙ СУД</h2>
         <div>{{ user.username }} ({{ user.role }}) | <a href="/logout" style="color: gold; text-decoration: none;">Выход</a></div>
     </div>
 
     <div class="container">
+        <input type="text" id="caseSearch" class="search-box" placeholder="🔍 Поиск по номеру, названию или нику...">
+
         <div class="card">
             <h3>📝 Подача нового иска</h3>
             <form action="/create_case" method="post">
@@ -47,56 +46,59 @@
                 </select>
                 <input type="text" name="title" placeholder="Краткое название иска" required>
                 <textarea name="content" rows="4" placeholder="Опишите суть обращения..." required></textarea>
-                <button type="submit" class="btn">Зарегистрировать и получить роль</button>
+                <button type="submit" class="btn">Зарегистрировать иск</button>
             </form>
         </div>
 
-        <div class="card">
-            <h3>📂 Реестр дел</h3>
-            {% if not cases %}
-                <p style="color: #999;">Активных дел не обнаружено.</p>
-            {% endif %}
-            
+        <div id="casesList">
             {% for case in cases %}
-            <div class="case-item">
+            <div class="card case-card status-{{ case.status|replace(' ', '-') }}">
+                <span class="status-label">{{ case.status }}</span>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <span class="case-badge">{{ case.case_num }}</span>
                         <strong>{{ case.title }}</strong>
                     </div>
-                    
                     {% if user.role != 'Гражданин' %}
-                    <a href="/delete_case/{{ case.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить иск навсегда?')">Удалить</a>
+                    <a href="/delete_case/{{ case.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
                     {% endif %}
                 </div>
 
-                <p style="font-size: 0.9em; color: #444; margin: 15px 0;">{{ case.content }}</p>
+                <p style="margin: 15px 0; font-size: 0.95em;">{{ case.content }}</p>
 
                 {% if case.judge_id %}
                     <div class="judge-info">
-                        <strong>👨‍⚖️ Судья в деле:</strong> {{ case.judge_id }}
-                        
+                        <strong>👨‍⚖️ Судья:</strong> {{ case.judge_id }}
                         {% if case.result %}
-                            <div class="verdict">
-                                <strong>Вердикт:</strong> {{ case.result }}
-                            </div>
+                            <p><strong>⚖️ Вердикт:</strong> {{ case.result }}</p>
                         {% elif user.username == case.judge_id %}
                             <form action="/answer_case/{{ case.id }}" method="post" style="margin-top: 10px;">
-                                <textarea name="result" rows="2" placeholder="Введите решение по делу..." required></textarea>
+                                <textarea name="result" rows="2" placeholder="Введите решение..." required></textarea>
                                 <button type="submit" class="btn btn-sm btn-success">Вынести вердикт</button>
                             </form>
-                        {% else %}
-                            <p style="margin: 5px 0; color: #888;">⚖️ Дело находится на рассмотрении...</p>
                         {% endif %}
                     </div>
                 {% elif user.role != 'Гражданин' %}
-                    <a href="/take_case/{{ case.id }}" class="btn btn-sm btn-warn">Взять дело в работу</a>
-                {% else %}
-                    <span style="font-size: 0.8em; color: #999;">🕒 Ожидает назначения судьи</span>
+                    <a href="/take_case/{{ case.id }}" class="btn btn-sm btn-warn" style="background: #3498db;">Взять в работу</a>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
+
+    <script>
+        // Скрипт мгновенного поиска
+        document.getElementById('caseSearch').addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let cards = document.getElementsByClassName('case-card');
+            for (let card of cards) {
+                if (card.innerText.toLowerCase().includes(filter)) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            }
+        });
+    </script>
 </body>
 </html>

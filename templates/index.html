@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Судебный Портал</title>
+    <title>Судебный Портал | Канцелярия</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; color: #2c3e50; }
         .nav { background: #1a237e; color: #fff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #c5a059; }
@@ -14,72 +14,142 @@
         .status-В-работе { border-left: 8px solid #3498db; }
         .status-Завершен { border-left: 8px solid #27ae60; }
 
-        .btn { background: #1a237e; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; }
+        .btn { background: #1a237e; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn:hover { background: #283593; opacity: 0.9; }
         .btn-sm { padding: 6px 12px; font-size: 0.85em; }
         .btn-danger { background: #c0392b; }
         .btn-success { background: #27ae60; }
         
-        .search-box { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #c5a059; margin-bottom: 20px; font-size: 1.1em; outline: none; }
-        .case-badge { background: #c5a059; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; margin-right: 10px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .judge-info { font-size: 0.85em; color: #1a237e; background: #eef2f7; padding: 15px; border-radius: 6px; margin-top: 15px; }
+        .search-box { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #c5a059; margin-bottom: 20px; font-size: 1.1em; outline: none; box-sizing: border-box; }
+        .case-badge { background: #c5a059; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; margin-right: 10px; font-weight: bold; }
+        
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; color: #555; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .judge-info { font-size: 0.85em; color: #1a237e; background: #f0f4f8; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px dashed #1a237e; }
         .status-label { float: right; font-weight: bold; text-transform: uppercase; font-size: 0.75em; padding: 4px 10px; border-radius: 4px; background: #eee; }
+        
+        hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="nav">
-        <h2>⚖️ ВЕРХОВНЫЙ СУД</h2>
-        <div>{{ user.username }} ({{ user.role }}) | <a href="/logout" style="color: gold; text-decoration: none;">Выход</a></div>
+        <h2>⚖️ СУДЕБНАЯ СИСТЕМА</h2>
+        <div><strong>{{ user.username }}</strong> ({{ user.role }}) | <a href="/logout" style="color: gold; text-decoration: none;">Выход</a></div>
     </div>
 
     <div class="container">
-        <input type="text" id="caseSearch" class="search-box" placeholder="🔍 Поиск по номеру, названию или нику...">
+        <input type="text" id="caseSearch" class="search-box" placeholder="🔍 Поиск по номеру дела, ФИО или типу иска...">
 
         <div class="card">
-            <h3>📝 Подача нового иска</h3>
+            <h3 style="margin-top: 0; color: #1a237e;">📄 Подача официального искового заявления</h3>
+            <p style="font-size: 0.85em; color: #666;">Заполните все поля для автоматического формирования бланка А4 в системе.</p>
+            
             <form action="/create_case" method="post">
-                <select name="case_type">
-                    <option value="GK">Гражданское дело (GK)</option>
-                    <option value="YD">Уголовное/Админ (YD)</option>
-                    <option value="KA">Кассация (KA)</option>
-                    <option value="GH">Верховный суд (GH)</option>
-                </select>
-                <input type="text" name="title" placeholder="Краткое название иска" required>
-                <textarea name="content" rows="4" placeholder="Опишите суть обращения..." required></textarea>
-                <button type="submit" class="btn">Зарегистрировать иск</button>
+                <div class="form-grid">
+                    <div>
+                        <label>Орган судебной власти:</label>
+                        <select name="court_name" required>
+                            <option>Верховный суд</option>
+                            <option>Кассационный Суд</option>
+                            <option>Суд по Уголовным и Административным делам</option>
+                            <option>Суд по гражданским делам</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Наименование процесса:</label>
+                        <select name="process_type" required>
+                            <option>о расторжении брака (развод)</option>
+                            <option>о признании брака недействительным</option>
+                            <option>о взыскании алиментов</option>
+                            <option>об установлении отцовства</option>
+                            <option>о лишении родительских прав</option>
+                            <option>о разделе имущества</option>
+                            <option>о признании права собственности</option>
+                            <option>о выселении</option>
+                            <option>о восстановлении на работе</option>
+                            <option>о возмещении материального ущерба</option>
+                            <option>о компенсации морального вреда</option>
+                            <option>об оспаривании действий органа власти</option>
+                            <option>о взыскании задолженности</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="form-grid">
+                    <div>
+                        <label>Данные Истца (ФИО):</label>
+                        <input type="text" name="plaintiff_fio" placeholder="Иванов Иван Иванович" required>
+                    </div>
+                    <div>
+                        <label>Данные Ответчика (ФИО/Орган):</label>
+                        <input type="text" name="defendant_fio" placeholder="Петров Петр Петрович" required>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label>Адрес регистрации:</label>
+                        <input type="text" name="plaintiff_address" placeholder="г. Лос-Сантос, ул. Мира, д. 1" required>
+                    </div>
+                    <div>
+                        <label>Контактный телефон:</label>
+                        <input type="text" name="plaintiff_phone" placeholder="555-000" required>
+                    </div>
+                </div>
+
+                <label>Заголовок обращения:</label>
+                <input type="text" name="title" placeholder="Например: Исковое заявление по факту незаконного увольнения" required>
+
+                <label>Суть заявления (Текст для бланка А4):</label>
+                <textarea name="content" rows="6" placeholder="Изложите обстоятельства дела и ваши требования..." required></textarea>
+
+                <button type="submit" class="btn" style="width: 100%; margin-top: 10px; background: #c5a059;">⚖️ Зарегистрировать и отправить в канцелярию</button>
             </form>
         </div>
 
         <div id="casesList">
+            <h3 style="color: #1a237e;">📁 Реестр судебных дел</h3>
             {% for case in cases %}
             <div class="card case-card status-{{ case.status|replace(' ', '-') }}">
                 <span class="status-label">{{ case.status }}</span>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <span class="case-badge">{{ case.case_num }}</span>
-                        <strong>{{ case.title }}</strong>
+                        <strong style="font-size: 1.1em;">{{ case.title }}</strong>
+                        <div style="margin-top: 5px; font-size: 0.85em; color: #666;">
+                            <span>🏛 {{ case.court_name }}</span> | 
+                            <span>👤 Истец: {{ case.plaintiff_fio }}</span>
+                        </div>
                     </div>
                     {% if user.role != 'Гражданин' %}
-                    <a href="/delete_case/{{ case.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
+                    <a href="/delete_case/{{ case.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить дело из архива?')">Удалить</a>
                     {% endif %}
                 </div>
 
-                <p style="margin: 15px 0; font-size: 0.95em;">{{ case.content }}</p>
+                <div style="margin: 15px 0; padding: 10px; background: #fafafa; border-radius: 6px; font-size: 0.95em; white-space: pre-wrap;">{{ case.content }}</div>
 
                 {% if case.judge_id %}
                     <div class="judge-info">
-                        <strong>👨‍⚖️ Судья:</strong> {{ case.judge_id }}
+                        <strong>👨‍⚖️ Судья в производстве:</strong> {{ case.judge_id }}
                         {% if case.result %}
-                            <p><strong>⚖️ Вердикт:</strong> {{ case.result }}</p>
+                            <hr>
+                            <p><strong>⚖️ ИТОГОВЫЙ ВЕРДИКТ:</strong></p>
+                            <div style="font-style: italic;">{{ case.result }}</div>
                         {% elif user.username == case.judge_id %}
                             <form action="/answer_case/{{ case.id }}" method="post" style="margin-top: 10px;">
-                                <textarea name="result" rows="2" placeholder="Введите решение..." required></textarea>
-                                <button type="submit" class="btn btn-sm btn-success">Вынести вердикт</button>
+                                <textarea name="result" rows="3" placeholder="Введите текст судебного постановления / вердикта..." required></textarea>
+                                <button type="submit" class="btn btn-sm btn-success">✅ Опубликовать вердикт</button>
                             </form>
                         {% endif %}
                     </div>
                 {% elif user.role != 'Гражданин' %}
-                    <a href="/take_case/{{ case.id }}" class="btn btn-sm btn-warn" style="background: #3498db;">Взять в работу</a>
+                    <div style="text-align: right;">
+                        <a href="/take_case/{{ case.id }}" class="btn btn-sm" style="background: #3498db;">Принять к производству</a>
+                    </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -87,16 +157,13 @@
     </div>
 
     <script>
-        // Скрипт мгновенного поиска
+        // Мгновенный поиск по всем параметрам
         document.getElementById('caseSearch').addEventListener('keyup', function() {
             let filter = this.value.toLowerCase();
             let cards = document.getElementsByClassName('case-card');
             for (let card of cards) {
-                if (card.innerText.toLowerCase().includes(filter)) {
-                    card.style.display = "";
-                } else {
-                    card.style.display = "none";
-                }
+                let content = card.innerText.toLowerCase();
+                card.style.display = content.includes(filter) ? "" : "none";
             }
         });
     </script>

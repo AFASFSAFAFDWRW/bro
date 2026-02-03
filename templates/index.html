@@ -5,31 +5,145 @@
     <title>Судебная Система | Электронная канцелярия</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; padding-bottom: 50px; }
-        .nav { background: #1a237e; color: #fff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #c5a059; }
-        .nav a { color: #ffd700; text-decoration: none; font-weight: bold; margin-left: 15px; }
-        .container { max-width: 900px; margin: 20px auto; }
-        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.85em; color: #555; }
-        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .btn-send { background: #c5a059; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 1.1em; }
-        
-        #paper-template {
-            width: 794px; height: 1123px;
-            padding: 60px 80px; background: white;
-            position: absolute; left: -9999px; top: 0;
-            box-sizing: border-box; color: black; line-height: 1.3;
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #eef2f7;
+            margin: 0;
+            padding-bottom: 50px;
         }
-        .a4-header { margin-left: auto; width: 60%; text-align: right; }
-        .a4-header p { margin: 2px 0; font-size: 14pt; font-family: "Times New Roman", serif; }
-        .line-under { border-bottom: 1px solid black; display: inline-block; width: 100%; min-height: 20px; text-align: center; font-weight: bold; }
-        .small-hint { font-size: 8pt; display: block; text-align: center; margin-top: -2px; }
-        .a4-title { text-align: center; margin-top: 50px; text-transform: uppercase; font-weight: bold; }
-        .a4-content { margin-top: 30px; text-indent: 40px; font-size: 13pt; min-height: 300px; white-space: pre-wrap; word-wrap: break-word; }
-        .a4-footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .case-image { width: 100%; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px; }
+        .nav {
+            background: #1a237e;
+            color: #fff;
+            padding: 15px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #c5a059;
+        }
+        .nav a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .btn-send {
+            background: #c5a059;
+            color: white;
+            padding: 15px;
+            border: none;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+        #paper-template {
+            width: 794px;
+            height: 1123px;
+            padding: 60px 80px;
+            background: white;
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            box-sizing: border-box;
+            color: black;
+            line-height: 1.3;
+        }
+        .a4-header {
+            margin-left: auto;
+            width: 60%;
+            text-align: right;
+        }
+        .a4-header p {
+            margin: 2px 0;
+            font-size: 14pt;
+            font-family: "Times New Roman", serif;
+        }
+        .line-under {
+            border-bottom: 1px solid black;
+            display: inline-block;
+            width: 100%;
+            min-height: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .small-hint {
+            font-size: 8pt;
+            display: block;
+            text-align: center;
+            margin-top: -2px;
+        }
+        .a4-title {
+            text-align: center;
+            margin-top: 50px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .a4-content {
+            margin-top: 30px;
+            text-indent: 40px;
+            font-size: 13pt;
+            min-height: 300px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .a4-footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .case-image {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            margin-left: 6px;
+        }
+        .badge-new { background: #e3f2fd; color: #1565c0; }
+        .badge-court { background: #fff3cd; color: #856404; }
     </style>
 </head>
 <body>
@@ -45,14 +159,14 @@
 <div class="container">
     <div class="card">
         <h3 style="margin-top:0">Заполнение искового заявления</h3>
+
         <div class="form-grid">
             <div>
                 <label>Выберите суд:</label>
                 <select id="f_court">
-                    <option>Верховный суд</option>
-                    <option>Кассационный Суд</option>
-                    <option>Суд по Уголовным и Административным делам</option>
-                    <option>Суд по гражданским делам</option>
+                    {% for c in court_options %}
+                        <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div>
@@ -74,16 +188,20 @@
             <div>
                 <label>ФИО Истца:</label>
                 <input type="text" id="f_istec" placeholder="Иванов И.И.">
+
                 <label>Адрес Истца:</label>
                 <input type="text" id="f_istec_addr" placeholder="г. Лос-Сантос, ул. Ленина">
+
                 <label>Телефон Истца:</label>
                 <input type="text" id="f_istec_phone" placeholder="777-888">
             </div>
             <div>
                 <label>ФИО Ответчика:</label>
                 <input type="text" id="f_otvet" placeholder="Петров П.П.">
+
                 <label>Адрес Ответчика:</label>
                 <input type="text" id="f_otvet_addr" placeholder="г. Лос-Сантос, ул. Мира">
+
                 <label>Телефон Ответчика:</label>
                 <input type="text" id="f_otvet_phone" placeholder="555-444">
             </div>
@@ -91,7 +209,7 @@
 
         <label>Суть заявления:</label>
         <textarea id="f_text" rows="5" placeholder="Опишите ситуацию..."></textarea>
-        
+
         <label>Ваша подпись (Фамилия И.О.):</label>
         <input type="text" id="f_sign" placeholder="Иванов И.И.">
 
@@ -99,16 +217,26 @@
     </div>
 
     <div id="casesList">
-        <h3>📂 Отправленные иски (визуальный реестр)</h3>
-        {% for case in cases %}
-            <div class="card">
-                <p><strong>Дело №{{ case.case_num }}</strong></p>
-                <img src="{{ case.image_data }}" class="case-image">
-            </div>
-        {% endfor %}
+        <h3>📂 Дела, доступные для просмотра</h3>
+        {% if cases %}
+            {% for case in cases %}
+                <div class="card">
+                    <p>
+                        <strong>Дело {{ case.case_num }}</strong>
+                        <span class="badge badge-court">{{ case.court_type }}</span>
+                        <span class="badge badge-new">{{ case.status }}</span><br>
+                        <small>Дата: {{ case.date.strftime('%d.%m.%Y %H:%M') }} UTC</small>
+                    </p>
+                    <img src="{{ case.image_data }}" class="case-image">
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Пока нет доступных дел.</p>
+        {% endif %}
     </div>
 </div>
 
+<!-- ШАБЛОН A4 ДЛЯ ГЕНЕРАЦИИ PNG -->
 <div id="paper-template">
     <div class="a4-header">
         <p>В <span id="p_court" class="line-under"></span></p>
@@ -124,22 +252,59 @@
             <p>Телефон: <span id="p_otvet_phone" class="line-under"></span></p>
         </div>
     </div>
-    <div class="a4-title">Исковое заявление<br>о <span id="p_type"></span></div>
+
+    <div class="a4-title">
+        Исковое заявление<br>о <span id="p_type"></span>
+    </div>
+
     <div class="a4-content" id="p_text"></div>
-    <p style="font-size: 11pt; margin-top: 40px;">На законных основаниях прошу Суд рассмотреть данное заявление.</p>
+
+    <p style="font-size: 11pt; margin-top: 40px;">
+        На законных основаниях прошу Суд рассмотреть данное заявление.
+    </p>
+
     <div class="a4-footer">
-        <div style="width: 200px; text-align: center;"><div style="border-bottom: 1px solid black; min-height: 30px;"></div><span class="small-hint">( подпись )</span></div>
-        <div style="width: 200px; text-align: center;"><div id="p_sign" style="border-bottom: 1px solid black; min-height: 30px; font-weight: bold;"></div><span class="small-hint">( расшифровка )</span></div>
-        <div>«<span id="p_day"></span>» <span id="p_month"></span> 2026 г.</div>
+        <div style="width: 200px; text-align: center;">
+            <div style="border-bottom: 1px solid black; min-height: 30px;"></div>
+            <span class="small-hint">( подпись )</span>
+        </div>
+        <div style="width: 200px; text-align: center;">
+            <div id="p_sign" style="border-bottom: 1px solid black; min-height: 30px; font-weight: bold;"></div>
+            <span class="small-hint">( расшифровка )</span>
+        </div>
+        <div>
+            «<span id="p_day"></span>» <span id="p_month"></span> 2026 г.
+        </div>
     </div>
 </div>
 
 <script>
-    const fields = ['court','istec','istec_addr','istec_phone','otvet','otvet_addr','otvet_phone','type','text','sign'];
+    // Привязка полей формы к шаблону A4
+    const fields = [
+        'court','istec','istec_addr','istec_phone',
+        'otvet','otvet_addr','otvet_phone','type','text','sign'
+    ];
+
     fields.forEach(f => {
-        document.getElementById('f_'+f).addEventListener('input', (e) => {
-            document.getElementById('p_'+f).innerText = e.target.value;
+        const inputEl = document.getElementById('f_' + f);
+        if (!inputEl) return;
+
+        inputEl.addEventListener('input', (e) => {
+            const target = document.getElementById('p_' + f);
+            if (target) target.innerText = e.target.value;
         });
+    });
+
+    // Изначально заполняем суд и тип
+    document.getElementById('p_court').innerText = document.getElementById('f_court').value;
+    document.getElementById('p_type').innerText = document.getElementById('f_type').value;
+
+    document.getElementById('f_court').addEventListener('change', (e) => {
+        document.getElementById('p_court').innerText = e.target.value;
+    });
+
+    document.getElementById('f_type').addEventListener('change', (e) => {
+        document.getElementById('p_type').innerText = e.target.value;
     });
 
     async function generateAndSend() {
@@ -147,29 +312,56 @@
         btn.innerText = "Генерация PNG...";
         btn.disabled = true;
 
+        // Немного валидации
+        const requiredIds = ['f_court','f_istec','f_otvet','f_text','f_sign'];
+        for (const id of requiredIds) {
+            const el = document.getElementById(id);
+            if (!el.value.trim()) {
+                alert("Пожалуйста, заполните все обязательные поля.");
+                btn.disabled = false;
+                btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
+                return;
+            }
+        }
+
         const now = new Date();
         document.getElementById('p_day').innerText = now.getDate();
-        const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+        const months = [
+            "января","февраля","марта","апреля","мая","июня",
+            "июля","августа","сентября","октября","ноября","декабря"
+        ];
         document.getElementById('p_month').innerText = months[now.getMonth()];
 
         const template = document.getElementById('paper-template');
         const canvas = await html2canvas(template, { scale: 2 });
         const imageData = canvas.toDataURL("image/png");
 
+        const courtType = document.getElementById('f_court').value;
+
         try {
             const response = await fetch('/save_case_image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageData })
+                body: JSON.stringify({
+                    image: imageData,
+                    court_type: courtType
+                })
             });
 
             if (response.ok) {
-                alert("Иск отправлен!");
+                const res = await response.json();
+                alert("Иск отправлен! Номер дела: " + res.case_num);
                 location.reload();
-            } else { alert("Ошибка сохранения на сервере!"); }
+            } else {
+                alert("Ошибка сохранения на сервере!");
+                btn.disabled = false;
+                btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
+            }
         } catch (e) {
+            console.error(e);
             alert("Ошибка сети!");
             btn.disabled = false;
+            btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
         }
     }
 </script>

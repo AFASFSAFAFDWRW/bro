@@ -30,12 +30,12 @@ GUILD_ID = int(os.getenv('GUILD_ID', '1468002775471226896'))
 
 CLIENT_ID = os.getenv('DISCORD_CLIENT_ID', '1468026057356480674')
 CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET', 'REPLACE_ME')
-REDIRECT_URI = os.getenv('REDIRECT_URI', 'https://your-render-url.onrender.com/callback')
+REDIRECT_URI = os.getenv('REDIRECT_URI', 'https://bro-4nhb.onrender.com/callback')
 TOKEN = os.getenv('DISCORD_TOKEN', 'REPLACE_ME_BOT_TOKEN')
 
 WEBHOOK_URL = os.getenv(
     'WEBHOOK_URL',
-    "https://discord.com/api/webhooks/XXX/YYY"  # замени на свой
+    "https://discord.com/api/webhooks/1468291063738400975/us9TPewLe-BDUgRtAq56rSJD6m7jiC5tD-QB7Tjsb-pBSIOdpFaiIig0cofHPCetMfJN"
 )
 
 # КАРТА: ID роли в Discord -> текстовая роль на сайте
@@ -192,7 +192,6 @@ def get_cases_for_user(user: User):
         return q.filter_by(author_id=user.discord_id).all()
 
     # Судьи: видят дела по своей категории
-    # Карта: роль на сайте -> префикс
     role_prefix_map = {
         'Кассационный судья': 'KA',
         'Председатель Верховного Суда': 'GH',
@@ -255,6 +254,7 @@ def callback():
     }
     r = requests.post("https://discord.com/api/v10/oauth2/token", data=data)
     token_data = r.json()
+    print("DEBUG OAuth token response:", token_data)
 
     access_token = token_data.get('access_token')
     if not access_token:
@@ -266,6 +266,9 @@ def callback():
         f"https://discord.com/api/v10/users/@me/guilds/{GUILD_ID}/member",
         headers=headers
     ).json()
+
+    print("DEBUG user info:", u_info)
+    print("DEBUG member info:", m_info)
 
     # Ник/имя
     display_name = (
@@ -289,11 +292,18 @@ def save_case_image():
     if 'user_id' not in session:
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
 
-    data = request.json
+    # Читаем JSON безопасно и логируем
+    data = request.get_json(silent=True)
+    print("DEBUG /save_case_image payload:", data)
+
+    if not data:
+        return jsonify({"status": "error", "message": "Empty or invalid JSON"}), 400
+
     img_base64 = data.get('image')
     court_type = data.get('court_type')
 
     if not img_base64 or not court_type:
+        print("DEBUG missing fields: image or court_type")
         return jsonify({"status": "error", "message": "No image or court type"}), 400
 
     user = User.query.filter_by(discord_id=session['user_id']).first()
@@ -357,4 +367,5 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     threading.Thread(target=run_bot, daemon=True).start()
+    # Render слушает порт из переменной PORT — её мы учитываем
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))

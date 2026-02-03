@@ -65,7 +65,7 @@
                         <strong>{{ case.title }}</strong>
                     </div>
                     
-                    {% if user.role == 'Судья' %}
+                    {% if user.role != 'Гражданин' %}
                     <a href="/delete_case/{{ case.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить иск навсегда?')">Удалить</a>
                     {% endif %}
                 </div>
@@ -80,7 +80,7 @@
                             <div class="verdict">
                                 <strong>Вердикт:</strong> {{ case.result }}
                             </div>
-                        {% elif session['user_id'] == case.judge_id %}
+                        {% elif user.username == case.judge_id %}
                             <form action="/answer_case/{{ case.id }}" method="post" style="margin-top: 10px;">
                                 <textarea name="result" rows="2" placeholder="Введите решение по делу..." required></textarea>
                                 <button type="submit" class="btn btn-sm btn-success">Вынести вердикт</button>
@@ -89,7 +89,7 @@
                             <p style="margin: 5px 0; color: #888;">⚖️ Дело находится на рассмотрении...</p>
                         {% endif %}
                     </div>
-                {% elif user.role == 'Судья' %}
+                {% elif user.role != 'Гражданин' %}
                     <a href="/take_case/{{ case.id }}" class="btn btn-sm btn-warn">Взять дело в работу</a>
                 {% else %}
                     <span style="font-size: 0.8em; color: #999;">🕒 Ожидает назначения судьи</span>

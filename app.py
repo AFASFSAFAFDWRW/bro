@@ -55,6 +55,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @tasks.loop(seconds=10)
 async def check_queue():
+    print("Бот проверяет очередь...")
     with app.app_context():
         tasks_to_do = DiscordQueue.query.filter_by(status='pending').all()
         if not tasks_to_do: return
@@ -144,3 +145,4 @@ if __name__ == '__main__':
     
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+

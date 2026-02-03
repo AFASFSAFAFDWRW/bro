@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Судебный Портал</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; color: #2c3e50; }
+        .nav { background: #1a237e; color: #fff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #c5a059; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .btn { background: #1a237e; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .case-badge { background: #c5a059; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; margin-right: 10px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .case-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h2>⚖️ ВЕРХОВНЫЙ СУД</h2>
+        <div>{{ user.username }} ({{ user.role }}) | <a href="/logout" style="color: gold;">Выход</a></div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3>📝 Подача нового иска</h3>
+            <form action="/create_case" method="post">
+                <select name="case_type">
+                    <option value="GK">Гражданское дело (GK)</option>
+                    <option value="YD">Уголовное/Админ (YD)</option>
+                    <option value="KA">Кассация (KA)</option>
+                    <option value="GH">Верховный суд (GH)</option>
+                </select>
+                <input type="text" name="title" placeholder="Краткое название иска" required>
+                <textarea name="content" rows="4" placeholder="Опишите суть обращения..." required></textarea>
+                <button type="submit" class="btn">Зарегистрировать и получить роль</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>📂 Реестр дел</h3>
+            {% if not cases %}
+                <p style="color: #999;">У вас пока нет активных дел.</p>
+            {% endif %}
+            {% for case in cases %}
+            <div class="case-item">
+                <span class="case-badge">{{ case.case_num }}</span>
+                <strong>{{ case.title }}</strong>
+                <p style="font-size: 0.9em; color: #666;">{{ case.content }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

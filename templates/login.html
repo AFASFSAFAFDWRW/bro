@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Вход | Судебная Система</title>
+    <style>
+        body { background: #1a2a6c; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; margin: 0; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .btn-discord { background: #5865F2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 20px; transition: 0.3s; }
+        .btn-discord:hover { background: #4752c4; transform: scale(1.05); }
+        h1 { color: #1a2a6c; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>СУД ПРАВОСУДИЯ</h1>
+        <p>Для подачи исков и работы в системе необходимо авторизоваться</p>
+        <a href="{{ auth_url }}" class="btn-discord">Войти через Discord</a>
+    </div>
+</body>
+</html>

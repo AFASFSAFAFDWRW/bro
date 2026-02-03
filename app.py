@@ -50,7 +50,7 @@ class Case(db.Model):
     title = db.Column(db.String(200))
     content = db.Column(db.Text)
     result = db.Column(db.Text, nullable=True) 
-    status = db.Column(db.String(20), default='Новый') # Новый, В работе, Завершен
+    status = db.Column(db.String(20), default='Новый')
     date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class DiscordQueue(db.Model):
@@ -61,16 +61,19 @@ class DiscordQueue(db.Model):
 
 # --- ФУНКЦИЯ ВЕБХУКА ---
 def send_discord_log(title, description, color=0x1a237e):
-    if WEBHOOK_URL == "https://discord.com/api/webhooks/1468291063738400975/us9TPewLe-BDUgRtAq56rSJD6m7jiC5tD-QB7Tjsb-pBSIOdpFaiIig0cofHPCetMfJN": return
-    data = {
-        "embeds": [{
-            "title": title,
-            "description": description,
-            "color": color,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }]
-    }
-    requests.post(WEBHOOK_URL, json=data)
+    # Теперь вебхук работает без блокировок
+    try:
+        data = {
+            "embeds": [{
+                "title": title,
+                "description": description,
+                "color": color,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }]
+        }
+        requests.post(WEBHOOK_URL, json=data)
+    except Exception as e:
+        print(f"Ошибка вебхука: {e}")
 
 # --- ЛОГИКА БОТА ---
 intents = discord.Intents.all()
@@ -137,7 +140,6 @@ def callback():
 def create_case():
     if 'user_id' not in session: return redirect('/')
     
-    # Ищем пользователя. Если не нашли (база была очищена), берем имя "Аноним"
     user = User.query.filter_by(discord_id=session['user_id']).first()
     u_name = user.username if user else "Неизвестный заявитель"
     
@@ -157,7 +159,6 @@ def create_case():
     db.session.add(DiscordQueue(discord_id=session['user_id'], role_name=num))
     db.session.commit()
     
-    # Теперь здесь используется u_name, который точно не None
     send_discord_log("🆕 Подан новый иск!", f"**Номер:** {num}\n**Заявитель:** {u_name}\n**Суть:** {new_case.title}", color=0xc5a059)
     
     return redirect('/')
@@ -178,7 +179,7 @@ def take_case(case_id):
 def answer_case(case_id):
     user = User.query.filter_by(discord_id=session.get('user_id')).first()
     case = Case.query.get(case_id)
-    if case.judge_id != user.username: return redirect('/')
+    if not case or case.judge_id != user.username: return redirect('/')
     case.result = request.form.get('result')
     case.status = 'Завершен'
     db.session.commit()
@@ -190,8 +191,9 @@ def delete_case(case_id):
     user = User.query.filter_by(discord_id=session.get('user_id')).first()
     if not user or user.role == 'Гражданин': return redirect('/')
     case = Case.query.get(case_id)
-    db.session.delete(case)
-    db.session.commit()
+    if case:
+        db.session.delete(case)
+        db.session.commit()
     return redirect('/')
 
 @app.route('/logout')
@@ -202,9 +204,10 @@ def logout():
 def run_bot(): asyncio.run(bot.start(TOKEN))
 
 if __name__ == '__main__':
-    with app.app_context(): db.create_all()
+    with app.app_context():
+        # ВНИМАНИЕ: Оставь эти 2 строки ниже только для первого запуска, чтобы обновить базу!
+        # После первого успешного иска УДАЛИ строку db.drop_all()
+        db.drop_all() 
+        db.create_all()
     threading.Thread(target=run_bot, daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
-
-
-

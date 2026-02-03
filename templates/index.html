@@ -288,7 +288,6 @@
     fields.forEach(f => {
         const inputEl = document.getElementById('f_' + f);
         if (!inputEl) return;
-
         inputEl.addEventListener('input', (e) => {
             const target = document.getElementById('p_' + f);
             if (target) target.innerText = e.target.value;
@@ -312,7 +311,7 @@
         btn.innerText = "Генерация PNG...";
         btn.disabled = true;
 
-        // Немного валидации
+        // Проверка обязательных полей
         const requiredIds = ['f_court','f_istec','f_otvet','f_text','f_sign'];
         for (const id of requiredIds) {
             const el = document.getElementById(id);
@@ -337,6 +336,7 @@
         const imageData = canvas.toDataURL("image/png");
 
         const courtType = document.getElementById('f_court').value;
+        console.log("DEBUG courtType:", courtType); // для проверки в браузере
 
         try {
             const response = await fetch('/save_case_image', {
@@ -353,6 +353,8 @@
                 alert("Иск отправлен! Номер дела: " + res.case_num);
                 location.reload();
             } else {
+                const text = await response.text();
+                console.error("SAVE ERROR:", text);
                 alert("Ошибка сохранения на сервере!");
                 btn.disabled = false;
                 btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";

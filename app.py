@@ -4,8 +4,10 @@ import requests
 import asyncio
 import threading
 import discord
+import base64
+import io
 from discord.ext import tasks, commands
-from flask import Flask, redirect, url_for, session, render_template, request, flash
+from flask import Flask, redirect, url_for, session, render_template, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 
@@ -44,21 +46,11 @@ class User(db.Model):
 class Case(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     case_num = db.Column(db.String(50), unique=True)
-    court_name = db.Column(db.String(100)) # Название суда
-    process_type = db.Column(db.String(200)) # Наименование процесса
+    image_data = db.Column(db.Text)  # Храним PNG в Base64
     author_id = db.Column(db.String(50))
     judge_id = db.Column(db.String(50), nullable=True)
-    
-    # Данные для бланка А4
-    plaintiff_fio = db.Column(db.String(150))
-    plaintiff_address = db.Column(db.String(200))
-    plaintiff_phone = db.Column(db.String(50))
-    defendant_fio = db.Column(db.String(150))
-    
-    title = db.Column(db.String(200))
-    content = db.Column(db.Text)
-    result = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='Новый')
+    result = db.Column(db.Text, nullable=True)
     date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class DiscordQueue(db.Model):
@@ -67,42 +59,7 @@ class DiscordQueue(db.Model):
     role_name = db.Column(db.String(100))
     status = db.Column(db.String(20), default='pending')
 
-# --- ФУНКЦИЯ ОФИЦИАЛЬНОГО ВЕБХУКА (А4) ---
-def send_official_document(case, u_name):
-    try:
-        # Формируем описание, имитирующее шапку документа
-        header = (
-            f"**В {case.court_name}**\n"
-            f"**Истец:** {case.plaintiff_fio}\n"
-            f"Адрес: {case.plaintiff_address}\n"
-            f"Тел: {case.plaintiff_phone}\n"
-            f"**Ответчик:** {case.defendant_fio}\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━"
-        )
-        
-        body = (
-            f"**ИСКОВОЕ ЗАЯВЛЕНИЕ**\n"
-            f"*об {case.process_type}*\n\n"
-            f"{case.content}\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"**Дата подачи:** {case.date.strftime('%d.%m.%Y')}\n"
-            f"**Подпись заявителя:** {u_name}"
-        )
-
-        data = {
-            "embeds": [{
-                "title": f"📄 ОФИЦИАЛЬНОЕ ОБРАЩЕНИЕ №{case.case_num}",
-                "description": f"{header}\n\n{body}",
-                "color": 0xFFFFFF, # Белый цвет как лист бумаги
-                "footer": {"text": "Судебная система | Электронная канцелярия"},
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }]
-        }
-        requests.post(WEBHOOK_URL, json=data)
-    except Exception as e:
-        print(f"Ошибка вебхука: {e}")
-
-# --- ОСТАЛЬНАЯ ЛОГИКА ---
+# --- БОТ ЛОГИКА ---
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -125,10 +82,13 @@ async def check_queue():
 async def on_ready():
     if not check_queue.is_running(): check_queue.start()
 
+# --- МАРШРУТЫ ---
 @app.route('/')
 def index():
     auth_url = f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={urllib.parse.quote(REDIRECT_URI)}&response_type=code&scope=identify+guilds.members.read"
-    if 'user_id' not in session: return render_template('login.html', auth_url=auth_url)
+    if 'user_id' not in session: 
+        return render_template('login.html', auth_url=auth_url)
+    
     user = User.query.filter_by(discord_id=session['user_id']).first()
     cases = Case.query.order_by(Case.date.desc()).all()
     return render_template('index.html', user=user, cases=cases)
@@ -140,10 +100,12 @@ def callback():
         'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 
         'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI
     }).json()
+    
     access_token = r.get('access_token')
     headers = {"Authorization": f"Bearer {access_token}"}
     u_info = requests.get("https://discord.com/api/v10/users/@me", headers=headers).json()
     m_info = requests.get(f"https://discord.com/api/v10/users/@me/guilds/{GUILD_ID}/member", headers=headers).json()
+    
     display_name = m_info.get('nick') or u_info.get('global_name') or u_info.get('username')
     user_role = 'Гражданин'
     if 'roles' in m_info:
@@ -151,6 +113,7 @@ def callback():
             if r_id in ROLE_MAP:
                 user_role = ROLE_MAP[r_id]
                 break 
+
     user = User.query.filter_by(discord_id=u_info['id']).first()
     if not user:
         user = User(discord_id=u_info['id'], username=display_name, role=user_role)
@@ -162,40 +125,48 @@ def callback():
     session['user_id'] = u_info['id']
     return redirect('/')
 
-@app.route('/create_case', methods=['POST'])
-def create_case():
-    if 'user_id' not in session: return redirect('/')
-    user = User.query.filter_by(discord_id=session['user_id']).first()
-    u_name = user.username if user else "Неизвестный заявитель"
+@app.route('/save_case_image', methods=['POST'])
+def save_case_image():
+    if 'user_id' not in session: 
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    
+    data = request.json
+    img_base64 = data.get('image')  # Получаем PNG данные
     
     # Генерация номера дела
     count = Case.query.count() + 1
     num = f"CASE-{datetime.now().year}-{count:03d}"
-    
+
+    # 1. Сохраняем в базу сайта
     new_case = Case(
         case_num=num,
-        court_name=request.form.get('court_name'),
-        process_type=request.form.get('process_type'),
+        image_data=img_base64,
         author_id=session['user_id'],
-        plaintiff_fio=request.form.get('plaintiff_fio'),
-        plaintiff_address=request.form.get('plaintiff_address'),
-        plaintiff_phone=request.form.get('plaintiff_phone'),
-        defendant_fio=request.form.get('defendant_fio'),
-        title=request.form.get('title'),
-        content=request.form.get('content'),
         status='Новый'
     )
-    
     db.session.add(new_case)
+    # Создаем роль-номер дела в дискорде
     db.session.add(DiscordQueue(discord_id=session['user_id'], role_name=num))
     db.session.commit()
-    
-    # Отправка "Листа А4" в вебхук
-    send_official_document(new_case, u_name)
-    
-    return redirect('/')
 
-# (Остальные маршруты take_case, answer_case остаются без изменений)
+    # 2. Отправка в Discord Webhook как файл PNG
+    try:
+        # Убираем заголовок "data:image/png;base64,"
+        header, encoded = img_base64.split(",", 1)
+        binary_data = base64.b64decode(encoded)
+        
+        files = {
+            'file': ('claim.png', io.BytesIO(binary_data), 'image/png')
+        }
+        payload = {
+            "content": f"⚖️ **ЗАРЕГИСТРИРОВАНО НОВОЕ ИСКОВОЕ ЗАЯВЛЕНИЕ №{num}**\n**Отправитель:** <@{session['user_id']}>"
+        }
+        requests.post(WEBHOOK_URL, data=payload, files=files)
+    except Exception as e:
+        print(f"Ошибка при отправке вебхука: {e}")
+
+    return jsonify({"status": "success", "case_num": num})
+
 @app.route('/take_case/<int:case_id>')
 def take_case(case_id):
     user = User.query.filter_by(discord_id=session.get('user_id')).first()
@@ -212,12 +183,13 @@ def logout():
     session.clear()
     return redirect('/')
 
-def run_bot(): asyncio.run(bot.start(TOKEN))
+def run_bot():
+    asyncio.run(bot.start(TOKEN))
 
 if __name__ == '__main__':
     with app.app_context():
-        # ВНИМАНИЕ: Оставь drop_all только для ПЕРВОГО запуска, чтобы обновить колонки в базе!
-        db.drop_all() 
+        # При первом запуске создаст обновленную таблицу
         db.create_all()
+    
     threading.Thread(target=run_bot, daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))

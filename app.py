@@ -131,13 +131,11 @@ def save_case_image():
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
     
     data = request.json
-    img_base64 = data.get('image')  # Получаем PNG данные
+    img_base64 = data.get('image')
     
-    # Генерация номера дела
     count = Case.query.count() + 1
     num = f"CASE-{datetime.now().year}-{count:03d}"
 
-    # 1. Сохраняем в базу сайта
     new_case = Case(
         case_num=num,
         image_data=img_base64,
@@ -145,38 +143,19 @@ def save_case_image():
         status='Новый'
     )
     db.session.add(new_case)
-    # Создаем роль-номер дела в дискорде
     db.session.add(DiscordQueue(discord_id=session['user_id'], role_name=num))
     db.session.commit()
 
-    # 2. Отправка в Discord Webhook как файл PNG
     try:
-        # Убираем заголовок "data:image/png;base64,"
         header, encoded = img_base64.split(",", 1)
         binary_data = base64.b64decode(encoded)
-        
-        files = {
-            'file': ('claim.png', io.BytesIO(binary_data), 'image/png')
-        }
-        payload = {
-            "content": f"⚖️ **ЗАРЕГИСТРИРОВАНО НОВОЕ ИСКОВОЕ ЗАЯВЛЕНИЕ №{num}**\n**Отправитель:** <@{session['user_id']}>"
-        }
+        files = {'file': ('claim.png', io.BytesIO(binary_data), 'image/png')}
+        payload = {"content": f"⚖️ **ЗАРЕГИСТРИРОВАНО НОВОЕ ИСКОВОЕ ЗАЯВЛЕНИЕ №{num}**\n**Отправитель:** <@{session['user_id']}>"}
         requests.post(WEBHOOK_URL, data=payload, files=files)
     except Exception as e:
         print(f"Ошибка при отправке вебхука: {e}")
 
     return jsonify({"status": "success", "case_num": num})
-
-@app.route('/take_case/<int:case_id>')
-def take_case(case_id):
-    user = User.query.filter_by(discord_id=session.get('user_id')).first()
-    if not user or user.role == 'Гражданин': return redirect('/')
-    case = Case.query.get(case_id)
-    if not case.judge_id:
-        case.judge_id = user.username
-        case.status = 'В работе'
-        db.session.commit()
-    return redirect('/')
 
 @app.route('/logout')
 def logout():
@@ -188,8 +167,6 @@ def run_bot():
 
 if __name__ == '__main__':
     with app.app_context():
-        # При первом запуске создаст обновленную таблицу
         db.create_all()
-    
     threading.Thread(target=run_bot, daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))

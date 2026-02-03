@@ -25,7 +25,14 @@ CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET', '7rOUeCkC1x2KMEvmoeqJ8aP7uDZb
 REDIRECT_URI = os.getenv('REDIRECT_URI', 'https://bro-4nhb.onrender.com/callback')
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-JUDGE_ROLES_IDS = ['1468030929120399501', '1468030940973498398', '1468030941040738344', '1468030941615226931', '1468030942231793795']
+# Твой список ролей для проверки доступа
+ROLE_MAP = {
+    '1468030929120399501': 'Председатель Верховного Суда',
+    '1468030940973498398': 'Верховный Судья',
+    '1468030941040738344': 'Кассационный судья',
+    '1468030941615226931': 'Судья по Уголовным и Административным делам',
+    '1468030942231793795': 'Судья по гражданским делам'
+}
 
 # --- МОДЕЛИ БАЗЫ ---
 class User(db.Model):
@@ -90,31 +97,17 @@ def callback():
         'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 
         'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI
     }).json()
-    
     access_token = r.get('access_token')
     headers = {"Authorization": f"Bearer {access_token}"}
-    
     u_info = requests.get("https://discord.com/api/v10/users/@me", headers=headers).json()
     m_info = requests.get(f"https://discord.com/api/v10/users/@me/guilds/{GUILD_ID}/member", headers=headers).json()
     
-    # Твой актуальный список ролей
-    ROLE_MAP = {
-        '1468030929120399501': 'Председатель Верховного Суда',
-        '1468030940973498398': 'Верховный Судья',
-        '1468030941040738344': 'Кассационный судья',
-        '1468030941615226931': 'Судья по Уголовным и Административным делам',
-        '1468030942231793795': 'Судья по гражданским делам'
-    }
-
-    # Имя: сначала ник на сервере, если нет — глобальное имя, если нет — логин
     display_name = m_info.get('nick') or u_info.get('global_name') or u_info.get('username')
     
-    # Поиск роли из списка
     user_role = 'Гражданин'
     if 'roles' in m_info:
-        # Проверяем роли по порядку приоритета (от высшего к низшему)
-        for r_id in ['1468030929120399501', '1468030940973498398', '1468030941040738344', '1468030941615226931', '1468030942231793795']:
-            if r_id in m_info['roles']:
+        for r_id in m_info['roles']:
+            if r_id in ROLE_MAP:
                 user_role = ROLE_MAP[r_id]
                 break 
 
@@ -122,10 +115,9 @@ def callback():
     if not user:
         user = User(discord_id=u_info['id'], username=display_name, role=user_role)
         db.session.add(user)
-    else:
+    else: 
         user.username = display_name
         user.role = user_role
-        
     db.session.commit()
     session['user_id'] = u_info['id']
     return redirect('/')
@@ -144,17 +136,17 @@ def create_case():
 @app.route('/take_case/<int:case_id>')
 def take_case(case_id):
     user = User.query.filter_by(discord_id=session.get('user_id')).first()
-    if not user or user.role != 'Судья': return redirect('/')
+    if not user or user.role == 'Гражданин': return redirect('/')
     case = Case.query.get(case_id)
     if not case.judge_id:
-        case.judge_id = user.discord_id
+        case.judge_id = user.username # Сохраняем ник судьи для отображения
         db.session.commit()
     return redirect('/')
 
 @app.route('/delete_case/<int:case_id>')
 def delete_case(case_id):
     user = User.query.filter_by(discord_id=session.get('user_id')).first()
-    if not user or user.role != 'Судья': return redirect('/')
+    if not user or user.role == 'Гражданин': return redirect('/')
     case = Case.query.get(case_id)
     db.session.delete(case)
     db.session.commit()
@@ -162,10 +154,10 @@ def delete_case(case_id):
 
 @app.route('/answer_case/<int:case_id>', methods=['POST'])
 def answer_case(case_id):
-    user_id = session.get('user_id')
+    user = User.query.filter_by(discord_id=session.get('user_id')).first()
     case = Case.query.get(case_id)
-    if case.judge_id != user_id:
-        flash("ОШИБКА: Этот иск закреплен за другим судьей!")
+    if case.judge_id != user.username:
+        flash("Ошибка: Этот иск закреплен за другим судьей!")
         return redirect('/')
     case.result = request.form.get('result')
     db.session.commit()
@@ -176,13 +168,9 @@ def logout():
     session.clear()
     return redirect('/')
 
-def run_bot():
-    asyncio.run(bot.start(TOKEN))
+def run_bot(): asyncio.run(bot.start(TOKEN))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    with app.app_context(): db.create_all()
     threading.Thread(target=run_bot, daemon=True).start()
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port, use_reloader=False)
-
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))

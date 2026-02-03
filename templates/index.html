@@ -6,28 +6,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; padding-bottom: 50px; }
-        .nav { background: #1a237e; color: #fff; padding: 15px 50px; display: flex; justify-content: space-between; border-bottom: 4px solid #c5a059; }
+        .nav { background: #1a237e; color: #fff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #c5a059; }
+        .nav a { color: #ffd700; text-decoration: none; font-weight: bold; margin-left: 15px; }
         .container { max-width: 900px; margin: 20px auto; }
         .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* Стили формы */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.85em; color: #555; }
         input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         .btn-send { background: #c5a059; color: white; padding: 15px; border: none; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 1.1em; }
         
-        /* --- СТИЛИ БЛАНКА А4 (СКРЫТЫЙ ДЛЯ ГЕНЕРАЦИИ) --- */
         #paper-template {
-            width: 794px; /* Размер А4 при 96 DPI */
-            height: 1123px;
-            padding: 60px 80px;
-            background: white;
-            position: absolute;
-            left: -9999px; /* Прячем его за экран */
-            top: 0;
-            box-sizing: border-box;
-            color: black;
-            line-height: 1.3;
+            width: 794px; height: 1123px;
+            padding: 60px 80px; background: white;
+            position: absolute; left: -9999px; top: 0;
+            box-sizing: border-box; color: black; line-height: 1.3;
         }
         .a4-header { margin-left: auto; width: 60%; text-align: right; }
         .a4-header p { margin: 2px 0; font-size: 14pt; font-family: "Times New Roman", serif; }
@@ -36,8 +29,6 @@
         .a4-title { text-align: center; margin-top: 50px; text-transform: uppercase; font-weight: bold; }
         .a4-content { margin-top: 30px; text-indent: 40px; font-size: 13pt; min-height: 300px; white-space: pre-wrap; word-wrap: break-word; }
         .a4-footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; }
-        
-        /* Список карточек на сайте */
         .case-image { width: 100%; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
@@ -45,7 +36,10 @@
 
 <div class="nav">
     <h2>⚖️ КАНЦЕЛЯРИЯ СУДА</h2>
-    <div>{{ user.username }}</div>
+    <div>
+        <strong>{{ user.username }}</strong> ({{ user.role }})
+        <a href="/logout">Выйти</a>
+    </div>
 </div>
 
 <div class="container">
@@ -67,20 +61,19 @@
                     <optgroup label="1. Семейные споры">
                         <option>Иск о расторжении брака (развод)</option>
                         <option>Иск о взыскании алиментов</option>
-                        <option>Иск о лишении родительских прав</option>
                     </optgroup>
                     <optgroup label="2. Жилищные споры">
                         <option>Иск о вселении</option>
                         <option>Иск о выселении</option>
                     </optgroup>
-                    </select>
+                </select>
             </div>
         </div>
 
         <div class="form-grid">
             <div>
                 <label>ФИО Истца:</label>
-                <input type="text" id="f_istec" placeholder="Иванов Иван Иванович">
+                <input type="text" id="f_istec" placeholder="Иванов И.И.">
                 <label>Адрес Истца:</label>
                 <input type="text" id="f_istec_addr" placeholder="г. Лос-Сантос, ул. Ленина">
                 <label>Телефон Истца:</label>
@@ -88,7 +81,7 @@
             </div>
             <div>
                 <label>ФИО Ответчика:</label>
-                <input type="text" id="f_otvet" placeholder="Петров Петр Петрович">
+                <input type="text" id="f_otvet" placeholder="Петров П.П.">
                 <label>Адрес Ответчика:</label>
                 <input type="text" id="f_otvet_addr" placeholder="г. Лос-Сантос, ул. Мира">
                 <label>Телефон Ответчика:</label>
@@ -110,7 +103,7 @@
         {% for case in cases %}
             <div class="card">
                 <p><strong>Дело №{{ case.case_num }}</strong></p>
-                <img src="{{ case.image_url }}" class="case-image">
+                <img src="{{ case.image_data }}" class="case-image">
             </div>
         {% endfor %}
     </div>
@@ -120,54 +113,28 @@
     <div class="a4-header">
         <p>В <span id="p_court" class="line-under"></span></p>
         <span class="small-hint">(наименование судебной инстанции)</span>
-        
         <div style="margin-top:20px">
             <p>Истец: <span id="p_istec" class="line-under"></span></p>
             <p>Адрес: <span id="p_istec_addr" class="line-under"></span></p>
             <p>Телефон: <span id="p_istec_phone" class="line-under"></span></p>
         </div>
-
         <div style="margin-top:20px">
             <p>Ответчик: <span id="p_otvet" class="line-under"></span></p>
             <p>Адрес: <span id="p_otvet_addr" class="line-under"></span></p>
             <p>Телефон: <span id="p_otvet_phone" class="line-under"></span></p>
         </div>
     </div>
-
-    <div class="a4-title">
-        Исковое заявление<br>
-        о <span id="p_type"></span>
-    </div>
-
+    <div class="a4-title">Исковое заявление<br>о <span id="p_type"></span></div>
     <div class="a4-content" id="p_text"></div>
-
-    <p style="font-size: 11pt; margin-top: 40px;">
-        На законных основаниях, изложенных Конституцией и иными нормативно-правовыми актами, прошу Суд рассмотреть данное моё исковое заявление и принять необходимые меры по отношению к данному делу.
-    </p>
-
-    <div style="font-size: 11pt; margin-top: 20px;">
-        К Исковому заявлению прилагаю:<br>
-        1. Копия документов, таких как: паспорт, медицинская карта, пакет лицензий<br>
-        2. Квитанция об оплате госпошлины.
-    </div>
-
+    <p style="font-size: 11pt; margin-top: 40px;">На законных основаниях прошу Суд рассмотреть данное заявление.</p>
     <div class="a4-footer">
-        <div style="width: 200px; text-align: center;">
-            <div style="border-bottom: 1px solid black; min-height: 30px;"></div>
-            <span class="small-hint">( подпись )</span>
-        </div>
-        <div style="width: 200px; text-align: center;">
-            <div id="p_sign" style="border-bottom: 1px solid black; min-height: 30px; font-weight: bold;"></div>
-            <span class="small-hint">( расшифровка )</span>
-        </div>
-        <div>
-            «<span id="p_day"></span>» <span id="p_month"></span> 2026 г.
-        </div>
+        <div style="width: 200px; text-align: center;"><div style="border-bottom: 1px solid black; min-height: 30px;"></div><span class="small-hint">( подпись )</span></div>
+        <div style="width: 200px; text-align: center;"><div id="p_sign" style="border-bottom: 1px solid black; min-height: 30px; font-weight: bold;"></div><span class="small-hint">( расшифровка )</span></div>
+        <div>«<span id="p_day"></span>» <span id="p_month"></span> 2026 г.</div>
     </div>
 </div>
 
 <script>
-    // Живое обновление бланка при вводе
     const fields = ['court','istec','istec_addr','istec_phone','otvet','otvet_addr','otvet_phone','type','text','sign'];
     fields.forEach(f => {
         document.getElementById('f_'+f).addEventListener('input', (e) => {
@@ -180,43 +147,31 @@
         btn.innerText = "Генерация PNG...";
         btn.disabled = true;
 
-        // Устанавливаем текущую дату в бланк
         const now = new Date();
         document.getElementById('p_day').innerText = now.getDate();
         const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
         document.getElementById('p_month').innerText = months[now.getMonth()];
 
-        // 1. Создаем картинку из скрытого блока
         const template = document.getElementById('paper-template');
-        const canvas = await html2canvas(template, { scale: 2 }); // scale 2 для высокого качества
+        const canvas = await html2canvas(template, { scale: 2 });
         const imageData = canvas.toDataURL("image/png");
 
-        // 2. Отправляем на бэкенд (чтобы сохранить в базу и на сайт)
-        // Здесь должен быть твой fetch запрос к серверу на Python/Node
-        // Для примера отправим сразу в Discord через JS:
-        
-        const webhookURL = "ТВОЙ_ВЕБХУК_ДИСКОРД"; // Вставь сюда ссылку
-        
-        // Превращаем base64 в файл для Дискорда
-        const res = await fetch(imageData);
-        const blob = await res.blob();
-        const formData = new FormData();
-        formData.append('file', blob, 'иск.png');
-        formData.append('payload_json', JSON.stringify({
-            content: "⚖️ **Поступило новое исковое заявление в виде документа А4**"
-        }));
-
         try {
-            await fetch(webhookURL, { method: 'POST', body: formData });
-            alert("Иск успешно сформирован и отправлен в виде PNG!");
-            location.reload(); // Перезагрузка для обновления списка
+            const response = await fetch('/save_case_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData })
+            });
+
+            if (response.ok) {
+                alert("Иск отправлен!");
+                location.reload();
+            } else { alert("Ошибка сохранения на сервере!"); }
         } catch (e) {
-            alert("Ошибка отправки! Проверь Webhook URL.");
+            alert("Ошибка сети!");
             btn.disabled = false;
-            btn.innerText = "ОТПРАВИТЬ ИСК (PNG)";
         }
     }
 </script>
-
 </body>
 </html>

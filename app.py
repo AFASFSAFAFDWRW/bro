@@ -9,7 +9,6 @@ from flask import Flask, redirect, url_for, session, render_template, request, f
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 
-# --- НАСТРОЙКИ ---
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'rfgerfgdfgvds')
 
@@ -19,13 +18,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# --- КОНФИГ ---
 GUILD_ID = int(os.getenv('GUILD_ID', '1468002775471226896'))
 CLIENT_ID = '1468026057356480674'
 CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET', '7rOUeCkC1x2KMEvmoeqJ8aP7uDZbgbgi')
 REDIRECT_URI = os.getenv('REDIRECT_URI', 'https://bro-4nhb.onrender.com/callback')
 TOKEN = os.getenv('DISCORD_TOKEN')
+WEBHOOK_URL = "https://discord.com/api/webhooks/1468291063738400975/us9TPewLe-BDUgRtAq56rSJD6m7jiC5tD-QB7Tjsb-pBSIOdpFaiIig0cofHPCetMfJN"
 
-# Твой список ролей для проверки доступа
 ROLE_MAP = {
     '1468030929120399501': 'Председатель Верховного Суда',
     '1468030940973498398': 'Верховный Судья',
@@ -34,7 +34,7 @@ ROLE_MAP = {
     '1468030942231793795': 'Судья по гражданским делам'
 }
 
-# --- МОДЕЛИ БАЗЫ ---
+# --- МОДЕЛИ ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     discord_id = db.Column(db.String(50), unique=True)
@@ -50,6 +50,7 @@ class Case(db.Model):
     title = db.Column(db.String(200))
     content = db.Column(db.Text)
     result = db.Column(db.Text, nullable=True) 
+    status = db.Column(db.String(20), default='Новый') # Новый, В работе, Завершен
     date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class DiscordQueue(db.Model):
@@ -57,6 +58,19 @@ class DiscordQueue(db.Model):
     discord_id = db.Column(db.String(50))
     role_name = db.Column(db.String(100))
     status = db.Column(db.String(20), default='pending')
+
+# --- ФУНКЦИЯ ВЕБХУКА ---
+def send_discord_log(title, description, color=0x1a237e):
+    if WEBHOOK_URL == "https://discord.com/api/webhooks/1468291063738400975/us9TPewLe-BDUgRtAq56rSJD6m7jiC5tD-QB7Tjsb-pBSIOdpFaiIig0cofHPCetMfJN": return
+    data = {
+        "embeds": [{
+            "title": title,
+            "description": description,
+            "color": color,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }]
+    }
+    requests.post(WEBHOOK_URL, json=data)
 
 # --- ЛОГИКА БОТА ---
 intents = discord.Intents.all()
@@ -101,16 +115,13 @@ def callback():
     headers = {"Authorization": f"Bearer {access_token}"}
     u_info = requests.get("https://discord.com/api/v10/users/@me", headers=headers).json()
     m_info = requests.get(f"https://discord.com/api/v10/users/@me/guilds/{GUILD_ID}/member", headers=headers).json()
-    
     display_name = m_info.get('nick') or u_info.get('global_name') or u_info.get('username')
-    
     user_role = 'Гражданин'
     if 'roles' in m_info:
         for r_id in m_info['roles']:
             if r_id in ROLE_MAP:
                 user_role = ROLE_MAP[r_id]
                 break 
-
     user = User.query.filter_by(discord_id=u_info['id']).first()
     if not user:
         user = User(discord_id=u_info['id'], username=display_name, role=user_role)
@@ -125,12 +136,14 @@ def callback():
 @app.route('/create_case', methods=['POST'])
 def create_case():
     if 'user_id' not in session: return redirect('/')
+    user = User.query.filter_by(discord_id=session['user_id']).first()
     ctype = request.form.get('case_type')
     num = f"{ctype}-{Case.query.filter_by(case_type=ctype).count() + 1:03d}"
-    new_case = Case(case_num=num, case_type=ctype, author_id=session['user_id'], title=request.form.get('title'), content=request.form.get('content'))
+    new_case = Case(case_num=num, case_type=ctype, author_id=session['user_id'], title=request.form.get('title'), content=request.form.get('content'), status='Новый')
     db.session.add(new_case)
     db.session.add(DiscordQueue(discord_id=session['user_id'], role_name=num))
     db.session.commit()
+    send_discord_log("🆕 Новый иск подан!", f"**Номер:** {num}\n**Заявитель:** {user.username}\n**Суть:** {new_case.title}", color=0xc5a059)
     return redirect('/')
 
 @app.route('/take_case/<int:case_id>')
@@ -139,8 +152,21 @@ def take_case(case_id):
     if not user or user.role == 'Гражданин': return redirect('/')
     case = Case.query.get(case_id)
     if not case.judge_id:
-        case.judge_id = user.username # Сохраняем ник судьи для отображения
+        case.judge_id = user.username
+        case.status = 'В работе'
         db.session.commit()
+        send_discord_log("👨‍⚖️ Иск взят в работу", f"**Номер:** {case.case_num}\n**Судья:** {user.username}", color=0x3498db)
+    return redirect('/')
+
+@app.route('/answer_case/<int:case_id>', methods=['POST'])
+def answer_case(case_id):
+    user = User.query.filter_by(discord_id=session.get('user_id')).first()
+    case = Case.query.get(case_id)
+    if case.judge_id != user.username: return redirect('/')
+    case.result = request.form.get('result')
+    case.status = 'Завершен'
+    db.session.commit()
+    send_discord_log("✅ Вынесен вердикт!", f"**Номер:** {case.case_num}\n**Судья:** {user.username}\n**Вердикт:** {case.result}", color=0x27ae60)
     return redirect('/')
 
 @app.route('/delete_case/<int:case_id>')
@@ -149,17 +175,6 @@ def delete_case(case_id):
     if not user or user.role == 'Гражданин': return redirect('/')
     case = Case.query.get(case_id)
     db.session.delete(case)
-    db.session.commit()
-    return redirect('/')
-
-@app.route('/answer_case/<int:case_id>', methods=['POST'])
-def answer_case(case_id):
-    user = User.query.filter_by(discord_id=session.get('user_id')).first()
-    case = Case.query.get(case_id)
-    if case.judge_id != user.username:
-        flash("Ошибка: Этот иск закреплен за другим судьей!")
-        return redirect('/')
-    case.result = request.form.get('result')
     db.session.commit()
     return redirect('/')
 

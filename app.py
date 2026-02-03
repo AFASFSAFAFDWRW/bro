@@ -5,13 +5,13 @@ import asyncio
 import threading
 import discord
 from discord.ext import tasks, commands
-from flask import Flask, redirect, url_for, session, render_template, request
+from flask import Flask, redirect, url_for, session, render_template, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 
 # --- НАСТРОЙКИ ---
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'super_secret_key')
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'rfgerfgdfgvds')
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'court.db')
@@ -21,8 +21,8 @@ db = SQLAlchemy(app)
 
 GUILD_ID = int(os.getenv('GUILD_ID', '1468002775471226896'))
 CLIENT_ID = '1468026057356480674'
-CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET')
-REDIRECT_URI = os.getenv('REDIRECT_URI')
+CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET', '7rOUeCkC1x2KMEvmoeqJ8aP7uDZbgbgi')
+REDIRECT_URI = os.getenv('REDIRECT_URI', 'https://bro-4nhb.onrender.com/callback')
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 JUDGE_ROLES_IDS = ['1468030929120399501', '1468030940973498398', '1468030941040738344', '1468030941615226931', '1468030942231793795']
@@ -39,8 +39,10 @@ class Case(db.Model):
     case_num = db.Column(db.String(20), unique=True)
     case_type = db.Column(db.String(10)) 
     author_id = db.Column(db.String(50))
+    judge_id = db.Column(db.String(50), nullable=True) 
     title = db.Column(db.String(200))
     content = db.Column(db.Text)
+    result = db.Column(db.Text, nullable=True) 
     date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class DiscordQueue(db.Model):
@@ -49,42 +51,30 @@ class DiscordQueue(db.Model):
     role_name = db.Column(db.String(100))
     status = db.Column(db.String(20), default='pending')
 
-# --- ЛОГИКА БОТА (ВНУТРИ САЙТА) ---
+# --- ЛОГИКА БОТА ---
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @tasks.loop(seconds=10)
 async def check_queue():
-    print("Бот проверяет очередь...")
     with app.app_context():
         tasks_to_do = DiscordQueue.query.filter_by(status='pending').all()
-        if not tasks_to_do: return
-        
         guild = bot.get_guild(GUILD_ID)
-        if not guild: return
-
+        if not guild or not tasks_to_do: return
         for task in tasks_to_do:
             try:
                 member = await guild.fetch_member(int(task.discord_id))
-                if member:
-                    role = discord.utils.get(guild.roles, name=task.role_name)
-                    if not role:
-                        role = await guild.create_role(name=task.role_name, reason="Иск")
-                    await member.add_roles(role)
-                    task.status = 'done'
-                    print(f"ВЫДАНО: {task.role_name}")
-            except Exception as e:
-                print(f"ОШИБКА БОТА: {e}")
-                task.status = 'error'
+                role = discord.utils.get(guild.roles, name=task.role_name) or await guild.create_role(name=task.role_name)
+                await member.add_roles(role)
+                task.status = 'done'
+            except: task.status = 'error'
         db.session.commit()
 
 @bot.event
 async def on_ready():
-    print(f"БОТ {bot.user} ОНЛАЙН!")
-    if not check_queue.is_running():
-        check_queue.start()
+    if not check_queue.is_running(): check_queue.start()
 
-# --- МАРШРУТЫ FLASK ---
+# --- МАРШРУТЫ ---
 @app.route('/')
 def index():
     auth_url = f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&redirect_uri={urllib.parse.quote(REDIRECT_URI)}&response_type=code&scope=identify+guilds.members.read"
@@ -99,51 +89,79 @@ def callback():
     r = requests.post("https://discord.com/api/v10/oauth2/token", data={
         'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 
         'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI
-    })
-    access_token = r.json().get('access_token')
+    }).json()
+    access_token = r.get('access_token')
     headers = {"Authorization": f"Bearer {access_token}"}
     u_info = requests.get("https://discord.com/api/v10/users/@me", headers=headers).json()
     m_info = requests.get(f"https://discord.com/api/v10/users/@me/guilds/{GUILD_ID}/member", headers=headers).json()
     
     user_role = 'Гражданин'
-    if 'roles' in m_info:
-        for r_id in m_info['roles']:
-            if r_id in JUDGE_ROLES_IDS: user_role = 'Председатель Верховного Суда'
+    for r_id in m_info.get('roles', []):
+        if r_id in JUDGE_ROLES_IDS: user_role = 'Судья'
 
     user = User.query.filter_by(discord_id=u_info['id']).first()
     if not user:
         user = User(discord_id=u_info['id'], username=u_info['username'], role=user_role)
         db.session.add(user)
-    else:
+    else: 
         user.role = user_role
+        user.username = u_info['username']
     db.session.commit()
     session['user_id'] = u_info['id']
-    return redirect(url_for('index'))
+    return redirect('/')
 
 @app.route('/create_case', methods=['POST'])
 def create_case():
     if 'user_id' not in session: return redirect('/')
     ctype = request.form.get('case_type')
-    count = Case.query.filter_by(case_type=ctype).count() + 1
-    num = f"{ctype}-{count:03d}"
-    
+    num = f"{ctype}-{Case.query.filter_by(case_type=ctype).count() + 1:03d}"
     new_case = Case(case_num=num, case_type=ctype, author_id=session['user_id'], title=request.form.get('title'), content=request.form.get('content'))
-    task = DiscordQueue(discord_id=session['user_id'], role_name=num)
-    db.session.add(new_case); db.session.add(task); db.session.commit()
+    db.session.add(new_case)
+    db.session.add(DiscordQueue(discord_id=session['user_id'], role_name=num))
+    db.session.commit()
     return redirect('/')
 
-# --- ЗАПУСК ---
+@app.route('/take_case/<int:case_id>')
+def take_case(case_id):
+    user = User.query.filter_by(discord_id=session.get('user_id')).first()
+    if not user or user.role != 'Судья': return redirect('/')
+    case = Case.query.get(case_id)
+    if not case.judge_id:
+        case.judge_id = user.discord_id
+        db.session.commit()
+    return redirect('/')
+
+@app.route('/delete_case/<int:case_id>')
+def delete_case(case_id):
+    user = User.query.filter_by(discord_id=session.get('user_id')).first()
+    if not user or user.role != 'Судья': return redirect('/')
+    case = Case.query.get(case_id)
+    db.session.delete(case)
+    db.session.commit()
+    return redirect('/')
+
+@app.route('/answer_case/<int:case_id>', methods=['POST'])
+def answer_case(case_id):
+    user_id = session.get('user_id')
+    case = Case.query.get(case_id)
+    if case.judge_id != user_id:
+        flash("ОШИБКА: Этот иск закреплен за другим судьей!")
+        return redirect('/')
+    case.result = request.form.get('result')
+    db.session.commit()
+    return redirect('/')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
 def run_bot():
     asyncio.run(bot.start(TOKEN))
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    
-    # Запускаем бота в отдельном потоке внутри Flask
     threading.Thread(target=run_bot, daemon=True).start()
-    
     port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-
-
+    app.run(host='0.0.0.0', port=port, use_reloader=False)

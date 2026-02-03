@@ -102,14 +102,28 @@ def callback():
     session['user_id'] = u_info['id']
     return redirect(url_for('index'))
 
+import subprocess # Добавь этот импорт в самый верх файла!
+
 @app.route('/create_case', methods=['POST'])
 def create_case():
     if 'user_id' not in session: return redirect('/')
     ctype = request.form.get('case_type')
     num = generate_case_number(ctype)
+    
     new_case = Case(case_num=num, case_type=ctype, author_id=session['user_id'], title=request.form.get('title'), content=request.form.get('content'))
     task = DiscordQueue(discord_id=session['user_id'], role_name=num)
-    db.session.add(new_case); db.session.add(task); db.session.commit()
+    
+    db.session.add(new_case)
+    db.session.add(task)
+    db.session.commit()
+
+    # ПИНАЕМ БОТА: запускаем скрипт-однодневку для выдачи роли
+    try:
+        # Передаем ID юзера и имя роли прямо в команду
+        subprocess.Popen(['python', 'give_role_once.py', str(session['user_id']), str(num)])
+    except Exception as e:
+        print(f"Не удалось запустить выдачу роли: {e}")
+
     return redirect('/')
 
 @app.route('/logout')
@@ -119,4 +133,5 @@ def logout():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
+
     app.run(host='0.0.0.0', port=port)

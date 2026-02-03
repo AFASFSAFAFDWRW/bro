@@ -90,22 +90,42 @@ def callback():
         'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 
         'grant_type': 'authorization_code', 'code': code, 'redirect_uri': REDIRECT_URI
     }).json()
+    
     access_token = r.get('access_token')
     headers = {"Authorization": f"Bearer {access_token}"}
+    
     u_info = requests.get("https://discord.com/api/v10/users/@me", headers=headers).json()
     m_info = requests.get(f"https://discord.com/api/v10/users/@me/guilds/{GUILD_ID}/member", headers=headers).json()
     
+    # Твой актуальный список ролей
+    ROLE_MAP = {
+        '1468030929120399501': 'Председатель Верховного Суда',
+        '1468030940973498398': 'Верховный Судья',
+        '1468030941040738344': 'Кассационный судья',
+        '1468030941615226931': 'Судья по Уголовным и Административным делам',
+        '1468030942231793795': 'Судья по гражданским делам'
+    }
+
+    # Имя: сначала ник на сервере, если нет — глобальное имя, если нет — логин
+    display_name = m_info.get('nick') or u_info.get('global_name') or u_info.get('username')
+    
+    # Поиск роли из списка
     user_role = 'Гражданин'
-    for r_id in m_info.get('roles', []):
-        if r_id in JUDGE_ROLES_IDS: user_role = 'Судья'
+    if 'roles' in m_info:
+        # Проверяем роли по порядку приоритета (от высшего к низшему)
+        for r_id in ['1468030929120399501', '1468030940973498398', '1468030941040738344', '1468030941615226931', '1468030942231793795']:
+            if r_id in m_info['roles']:
+                user_role = ROLE_MAP[r_id]
+                break 
 
     user = User.query.filter_by(discord_id=u_info['id']).first()
     if not user:
-        user = User(discord_id=u_info['id'], username=u_info['username'], role=user_role)
+        user = User(discord_id=u_info['id'], username=display_name, role=user_role)
         db.session.add(user)
-    else: 
+    else:
+        user.username = display_name
         user.role = user_role
-        user.username = u_info['username']
+        
     db.session.commit()
     session['user_id'] = u_info['id']
     return redirect('/')
@@ -165,3 +185,4 @@ if __name__ == '__main__':
     threading.Thread(target=run_bot, daemon=True).start()
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port, use_reloader=False)
+

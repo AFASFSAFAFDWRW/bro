@@ -136,14 +136,30 @@ def callback():
 @app.route('/create_case', methods=['POST'])
 def create_case():
     if 'user_id' not in session: return redirect('/')
+    
+    # Ищем пользователя. Если не нашли (база была очищена), берем имя "Аноним"
     user = User.query.filter_by(discord_id=session['user_id']).first()
+    u_name = user.username if user else "Неизвестный заявитель"
+    
     ctype = request.form.get('case_type')
     num = f"{ctype}-{Case.query.filter_by(case_type=ctype).count() + 1:03d}"
-    new_case = Case(case_num=num, case_type=ctype, author_id=session['user_id'], title=request.form.get('title'), content=request.form.get('content'), status='Новый')
+    
+    new_case = Case(
+        case_num=num, 
+        case_type=ctype, 
+        author_id=session['user_id'], 
+        title=request.form.get('title'), 
+        content=request.form.get('content'), 
+        status='Новый'
+    )
+    
     db.session.add(new_case)
     db.session.add(DiscordQueue(discord_id=session['user_id'], role_name=num))
     db.session.commit()
-    send_discord_log("🆕 Новый иск подан!", f"**Номер:** {num}\n**Заявитель:** {user.username}\n**Суть:** {new_case.title}", color=0xc5a059)
+    
+    # Теперь здесь используется u_name, который точно не None
+    send_discord_log("🆕 Подан новый иск!", f"**Номер:** {num}\n**Заявитель:** {u_name}\n**Суть:** {new_case.title}", color=0xc5a059)
+    
     return redirect('/')
 
 @app.route('/take_case/<int:case_id>')
@@ -189,5 +205,6 @@ if __name__ == '__main__':
     with app.app_context(): db.create_all()
     threading.Thread(target=run_bot, daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+
 
 

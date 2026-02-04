@@ -14,7 +14,7 @@
             color: #fff;
             padding: 12px 40px;
             display: flex;
-            justify-content: space-between;
+            justify-content: space_between;
             align-items: center;
             border-bottom: 4px solid #c5a059;
         }
@@ -31,7 +31,7 @@
         h2 { margin: 10px 0 20px; }
         .columns {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1.1fr;
             gap: 20px;
         }
         .card {
@@ -57,7 +57,7 @@
         tr:hover td {
             background: #f9fafb;
         }
-        select, button {
+        select, button, input[type="checkbox"] {
             font-family: inherit;
             font-size: 0.9em;
         }
@@ -87,6 +87,23 @@
             background: #dbeafe !important;
         }
         .muted { color:#6b7280; font-size:0.8em; }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 6px 10px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 0.9em;
+        }
+        .tab.active {
+            border-bottom-color: #2563eb;
+            font-weight: 600;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -105,8 +122,9 @@
 <div class="container">
     <h2>Управление участниками и ролями Discord</h2>
     <p class="muted">
-        Обновление в реальном времени каждые 5 секунд. Список ролей берётся с сервера Discord.
-        Из панели можно только выдавать и снимать роли у участников.
+        Обновление участников каждые 5 секунд.  
+        Вкладка «Роли» — выдача/снятие ролей.  
+        Вкладка «Права ролей» — виртуальные права на сайте (не трогают права в самом Discord).
     </p>
 
     <div class="columns">
@@ -115,44 +133,84 @@
             <h3>Участники сервера</h3>
             <table id="membersTable">
                 <thead>
-                    <tr>
-                        <th>Пользователь</th>
-                        <th>Роли</th>
-                    </tr>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Роли</th>
+                </tr>
                 </thead>
-                <tbody>
-                    <!-- заполняется JS -->
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
 
-        <!-- РОЛИ -->
+        <!-- ПРАВА/РОЛИ -->
         <div class="card">
-            <h3>Роли сервера</h3>
-            <p class="muted">
-                Выберите участника слева, затем роль и действие.
-            </p>
-            <div>
-                <label>Выбранный участник:</label>
-                <div id="selectedMember" class="muted">не выбран</div>
+            <div class="tabs">
+                <div class="tab active" data-tab="roles">Роли</div>
+                <div class="tab" data-tab="perms">Права ролей</div>
             </div>
-            <div style="margin-top:10px;">
-                <label>Роль:</label>
-                <select id="roleSelect" style="width:100%;"></select>
+
+            <!-- ТАБ РОЛИ -->
+            <div class="tab-content active" id="tab-roles">
+                <h3>Выдача / снятие ролей</h3>
+                <p class="muted">
+                    Выберите участника слева, затем роль и действие.
+                </p>
+                <div>
+                    <label>Выбранный участник:</label>
+                    <div id="selectedMember" class="muted">не выбран</div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>Роль:</label>
+                    <select id="roleSelect" style="width:100%;"></select>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn btn-primary" onclick="changeRole('add')">Выдать роль</button>
+                    <button class="btn btn-danger" onclick="changeRole('remove')">Снять роль</button>
+                </div>
             </div>
-            <div style="display:flex;gap:8px;margin-top:12px;">
-                <button class="btn btn-primary" onclick="changeRole('add')">Выдать роль</button>
-                <button class="btn btn-danger" onclick="changeRole('remove')">Снять роль</button>
+
+            <!-- ТАБ ПРАВА -->
+            <div class="tab-content" id="tab-perms">
+                <h3>Виртуальные права ролей (на сайте)</h3>
+                <p class="muted">
+                    Здесь настраиваются только права внутри веб‑сайта.
+                </p>
+                <div>
+                    <label>Роль:</label>
+                    <select id="permRoleSelect" style="width:100%;"></select>
+                </div>
+                <div style="margin-top:10px;">
+                    <label><input type="checkbox" id="perm_close"> Может закрывать дела</label><br>
+                    <label><input type="checkbox" id="perm_view_all"> Видит все дела</label><br>
+                    <label><input type="checkbox" id="perm_create" checked> Может создавать иски</label>
+                </div>
+                <button class="btn btn-primary" style="margin-top:12px;" onclick="savePermissions()">
+                    Сохранить права роли
+                </button>
+                <p id="permStatus" class="muted" style="margin-top:6px;"></p>
             </div>
         </div>
     </div>
 </div>
+
+<canvas id="dummy" style="display:none;"></canvas>
 
 <script>
     let members = [];
     let roles = [];
     let selectedMemberId = null;
 
+    // ---------- вкладки ----------
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        });
+    });
+
+    // ---------- участники ----------
     async function fetchMembers() {
         try {
             const resp = await fetch('/api/members');
@@ -164,26 +222,14 @@
         }
     }
 
-    async function fetchRoles() {
-        try {
-            const resp = await fetch('/api/roles');
-            if (!resp.ok) return;
-            roles = await resp.json();
-            renderRoles();
-        } catch (e) {
-            console.error('roles error', e);
-        }
-    }
-
     function renderMembers() {
         const tbody = document.querySelector('#membersTable tbody');
         tbody.innerHTML = '';
         members.forEach(m => {
             const tr = document.createElement('tr');
             tr.dataset.id = m.discord_id;
-            if (m.discord_id === selectedMemberId) {
-                tr.classList.add('member-selected');
-            }
+            if (m.discord_id === selectedMemberId) tr.classList.add('member-selected');
+
             tr.onclick = () => {
                 selectedMemberId = m.discord_id;
                 document.querySelectorAll('#membersTable tbody tr')
@@ -215,15 +261,51 @@
         });
     }
 
-    function renderRoles() {
-        const sel = document.getElementById('roleSelect');
-        sel.innerHTML = '';
+    // ---------- роли + права ----------
+    async function fetchRoles() {
+        try {
+            const resp = await fetch('/api/roles');
+            if (!resp.ok) return;
+            roles = await resp.json();
+            renderRoleSelects();
+        } catch (e) {
+            console.error('roles error', e);
+        }
+    }
+
+    function renderRoleSelects() {
+        const roleSel = document.getElementById('roleSelect');
+        const permRoleSel = document.getElementById('permRoleSelect');
+        roleSel.innerHTML = '';
+        permRoleSel.innerHTML = '';
+
         roles.forEach(r => {
-            const opt = document.createElement('option');
-            opt.value = r.id;
-            opt.textContent = r.name;
-            sel.appendChild(opt);
+            const opt1 = document.createElement('option');
+            opt1.value = r.id;
+            opt1.textContent = r.name;
+            roleSel.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = r.id;
+            opt2.textContent = r.name;
+            opt2.dataset.close = r.can_close_cases ? '1' : '0';
+            opt2.dataset.viewall = r.can_view_all_cases ? '1' : '0';
+            opt2.dataset.create = r.can_create_cases ? '1' : '0';
+            permRoleSel.appendChild(opt2);
         });
+
+        updatePermCheckboxes();
+        permRoleSel.onchange = updatePermCheckboxes;
+    }
+
+    function updatePermCheckboxes() {
+        const sel = document.getElementById('permRoleSelect');
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt) return;
+        document.getElementById('perm_close').checked = opt.dataset.close === '1';
+        document.getElementById('perm_view_all').checked = opt.dataset.viewall === '1';
+        document.getElementById('perm_create').checked = opt.dataset.create !== '0';
+        document.getElementById('permStatus').textContent = '';
     }
 
     async function changeRole(action) {
@@ -249,7 +331,6 @@
             });
             const data = await resp.json();
             if (data.result === 'ok') {
-                // сразу обновим список
                 await fetchMembers();
             } else {
                 alert('Ошибка операции: ' + data.result);
@@ -260,11 +341,48 @@
         }
     }
 
+    async function savePermissions() {
+        const sel = document.getElementById('permRoleSelect');
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt) {
+            alert('Нет роли.');
+            return;
+        }
+        const roleId = opt.value;
+        const roleName = opt.textContent;
+
+        const body = {
+            role_id: roleId,
+            role_name: roleName,
+            can_close_cases: document.getElementById('perm_close').checked,
+            can_view_all_cases: document.getElementById('perm_view_all').checked,
+            can_create_cases: document.getElementById('perm_create').checked
+        };
+
+        try {
+            const resp = await fetch('/api/role_permissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await resp.json();
+            if (data.result === 'ok') {
+                document.getElementById('permStatus').textContent = 'Права сохранены';
+                // обновим roles, чтобы локальные данные совпали
+                await fetchRoles();
+            } else {
+                document.getElementById('permStatus').textContent = 'Ошибка сохранения';
+            }
+        } catch (e) {
+            console.error(e);
+            document.getElementById('permStatus').textContent = 'Ошибка сети';
+        }
+    }
+
     // начальная загрузка
     fetchMembers();
     fetchRoles();
-    // автообновление
-    setInterval(fetchMembers, 5000);
+    setInterval(fetchMembers, 5000); // автообновление участников
 </script>
 </body>
 </html>

@@ -293,23 +293,23 @@
 <canvas id="paper-canvas" width="795" height="1123"></canvas>
 
 <script>
-    // Координаты под твой PNG (примерно подогнаны под скрин)
+    // Координаты под PNG (уточнённые по твоему скрину)
     const points = {
-        court1: {x:430, y:100},  // "В ________"
-        fio1:   {x:460, y:200},  // Истец ФИО
-        addr1:  {x:460, y:235},  // Истец адрес
-        tel1:   {x:460, y:270},  // Истец телефон
-        fio2:   {x:460, y:330},  // Ответчик ФИО
-        addr2:  {x:460, y:365},  // Ответчик адрес
-        tel2:   {x:460, y:400},  // Ответчик телефон
-        process:{x:305, y:470},  // после "о"
+        court1: {x:430, y:95},   // Суд
+        fio1:   {x:455, y:185},  // Истец ФИО
+        addr1:  {x:455, y:218},  // Истец адрес
+        tel1:   {x:455, y:251},  // Истец телефон
+        fio2:   {x:455, y:313},  // Ответчик ФИО
+        addr2:  {x:455, y:346},  // Ответчик адрес
+        tel2:   {x:455, y:379},  // Ответчик телефон
+        process:{x:305, y:445},  // наименование процесса после "о"
         line1:  {x:105, y:520},  // суть строка 1
         line2:  {x:105, y:545},  // суть строка 2
         line3:  {x:105, y:570},  // суть строка 3
-        sign:   {x:100, y:990},  // подпись
-        day:    {x:520, y:990},  // «__» DD
-        month:  {x:565, y:990},  // месяц
-        year:   {x:700, y:990}   // год
+        sign:   {x:105, y:968},  // подпись (над линией слева)
+        day:    {x:515, y:968},  // «__» DD
+        month:  {x:560, y:968},  // месяц
+        year:   {x:698, y:968}   // год (две последние цифры)
     };
 
     const bgImage = new Image();
@@ -327,7 +327,10 @@
         btn.disabled = true;
         btn.textContent = "Генерация PNG...";
 
-        const required = ['f_court1','f_process','f_fio1','f_fio2','f_sign','f_day','f_month','f_year'];
+        const required = [
+            'f_court1','f_process','f_fio1','f_fio2',
+            'f_sign','f_day','f_month','f_year'
+        ];
         for (const id of required) {
             const el = document.getElementById(id);
             if (!el.value || !el.value.trim()) {
@@ -371,20 +374,20 @@
         const mainFont = '11pt "Roboto Serif"';
         const tnFont   = '13pt "Times New Roman"';
 
-        // Наименование суда
+        // Суд
         drawText(ctx, v.court1, points.court1.x, points.court1.y, mainFont, false);
 
-        // Истец (ФИО жирный)
+        // Истец (ФИО жирный, остальное обычное)
         drawText(ctx, v.fio1,  points.fio1.x,  points.fio1.y,  mainFont, true);
         drawText(ctx, v.addr1, points.addr1.x, points.addr1.y, mainFont, false);
         drawText(ctx, v.tel1,  points.tel1.x,  points.tel1.y,  mainFont, false);
 
-        // Ответчик (ФИО жирный)
+        // Ответчик
         drawText(ctx, v.fio2,  points.fio2.x,  points.fio2.y,  mainFont, true);
         drawText(ctx, v.addr2, points.addr2.x, points.addr2.y, mainFont, false);
         drawText(ctx, v.tel2,  points.tel2.x,  points.tel2.y,  mainFont, false);
 
-        // Наименование процесса (жирный)
+        // Наименование процесса (жирный, сразу после "о")
         drawText(ctx, v.process, points.process.x, points.process.y, mainFont, true);
 
         // Суть – три строки
@@ -393,7 +396,7 @@
         if (v.line3) drawText(ctx, v.line3, points.line3.x, points.line3.y, mainFont, false);
 
         // Подпись и дата – Times New Roman 13
-        drawText(ctx, v.sign, points.sign.x, points.sign.y, tnFont, false);
+        drawText(ctx, v.sign,  points.sign.x,  points.sign.y,  tnFont, false);
         drawText(ctx, v.day,   points.day.x,   points.day.y,   tnFont, false);
         drawText(ctx, v.month, points.month.x, points.month.y, tnFont, false);
         drawText(ctx, v.year,  points.year.x,  points.year.y,  tnFont, false);
@@ -429,3 +432,4 @@
 </script>
 </body>
 </html>
+

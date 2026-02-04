@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Судебная Система | Электронная канцелярия</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Рукописный шрифт только для сути заявления -->
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -37,11 +41,6 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
         label {
             display: block;
             margin-top: 10px;
@@ -56,6 +55,14 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
         .btn-send {
             background: #c5a059;
@@ -89,88 +96,21 @@
         .badge-new { background: #e3f2fd; color: #1565c0; }
         .badge-court { background: #fff3cd; color: #856404; }
 
-        /* ---- ОФОРМЛЕНИЕ A4, как на втором скрине ---- */
+        /* === ОБЛАСТЬ A4: оригинальный документ === */
         #paper-template {
-            width: 794px;              /* A4 при 96 dpi */
+            width: 794px;   /* A4 при 96dpi */
             height: 1123px;
-            padding: 60px;
             background: #ffffff;
             position: absolute;
             left: -9999px;
             top: 0;
-            box-sizing: border-box;
-            color: #000;
-            font-family: "Times New Roman", serif;
-            font-size: 12pt;
+            overflow: hidden;
         }
-        .a4-top {
-            display: flex;
-            justify-content: flex-end;
-        }
-        .a4-top-right {
-            width: 60%;
-            text-align: right;
-        }
-        .a4-court-line {
-            border-bottom: 1px solid #000;
-            display: inline-block;
-            min-width: 250px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .a4-label {
-            font-weight: bold;
-        }
-        .a4-underline {
-            border-bottom: 1px solid #000;
-            min-width: 250px;
-            display: inline-block;
-            text-align: left;
-            padding: 0 3px;
-        }
-        .a4-row {
-            margin-top: 8px;
-        }
-        .a4-title-block {
-            text-align: center;
-            margin-top: 60px;
-            font-weight: bold;
-            text-transform: none;
-        }
-        .a4-title-main {
-            font-size: 14pt;
-        }
-        .a4-body {
-            margin-top: 20px;
-        }
-        .a4-body-text {
-            margin-top: 10px;
-            text-indent: 40px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .a4-footer-block {
-            margin-top: 40px;
-        }
-        .a4-footer-list {
-            margin-top: 10px;
-        }
-        .a4-sign-row {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        .a4-sign-col {
-            width: 30%;
-            text-align: center;
-        }
-        .a4-sign-line {
-            border-bottom: 1px solid #000;
-            min-height: 25px;
-        }
-        .a4-sign-hint {
-            font-size: 9pt;
+
+        /* Рукописный шрифт для сути, без изменения размера */
+        #p_text {
+            font-family: 'Patrick Hand', cursive !important;
+            font-size: 13pt !important; /* оставляем как в исходнике */
         }
     </style>
 </head>
@@ -185,70 +125,55 @@
 </div>
 
 <div class="container">
+    <!-- ФОРМА ЗАПОЛНЕНИЯ ПЕРЕМЕННЫХ -->
     <div class="card">
         <h3 style="margin-top:0">Заполнение искового заявления</h3>
 
         <div class="form-grid">
             <div>
-                <label>Выберите суд:</label>
-                <select id="f_court">
-                    {% for c in court_options %}
-                        <option value="{{ c }}">{{ c }}</option>
-                    {% endfor %}
-                </select>
+                <label>Наименование суда:</label>
+                <input type="text" id="f_court1" placeholder="Указать сам суд">
             </div>
             <div>
-                <label>Тип процесса (наименование процесса):</label>
-                <select id="f_type">
-                    <optgroup label="1. Семейные споры">
-                        <option>Иск о расторжении брака (развод)</option>
-                        <option>Иск о взыскании алиментов</option>
-                    </optgroup>
-                    <optgroup label="2. Жилищные споры">
-                        <option>Иск о вселении</option>
-                        <option>Иск о выселении</option>
-                    </optgroup>
-                </select>
+                <label>НАИМЕНОВАНИЕ ПРОЦЕССА:</label>
+                <input type="text" id="f_process" placeholder="Например: расторжение брака">
             </div>
         </div>
 
         <div class="form-grid">
             <div>
-                <label>ФИО Истца:</label>
-                <input type="text" id="f_istec" placeholder="Фамилия Имя Отчество">
-
-                <label>Адрес Истца:</label>
-                <input type="text" id="f_istec_addr" placeholder="Указать адрес">
-
-                <label>Телефон Истца:</label>
-                <input type="text" id="f_istec_phone" placeholder="Указать номер телефона">
+                <label>Истец — Фамилия Имя Отчество1:</label>
+                <input type="text" id="f_fio1" placeholder="Фамилия Имя Отчество">
+                <label>Адрес1:</label>
+                <input type="text" id="f_addr1" placeholder="Адрес истца">
+                <label>Телефон1:</label>
+                <input type="text" id="f_tel1" placeholder="Телефон истца">
             </div>
             <div>
-                <label>ФИО Ответчика:</label>
-                <input type="text" id="f_otvet" placeholder="Фамилия Имя Отчество">
-
-                <label>Адрес Ответчика:</label>
-                <input type="text" id="f_otvet_addr" placeholder="Указать адрес">
-
-                <label>Телефон Ответчика:</label>
-                <input type="text" id="f_otvet_phone" placeholder="Указать номер телефона">
+                <label>Ответчик — Фамилия Имя Отчество2:</label>
+                <input type="text" id="f_fio2" placeholder="Фамилия Имя Отчество">
+                <label>Адрес2:</label>
+                <input type="text" id="f_addr2" placeholder="Адрес ответчика">
+                <label>Телефон2:</label>
+                <input type="text" id="f_tel2" placeholder="Телефон ответчика">
             </div>
         </div>
 
-        <label>Суть искового заявления:</label>
-        <textarea id="f_text" rows="5" placeholder="Опишите ситуацию..."></textarea>
-
-        <label>Ваша подпись (Фамилия И.О.):</label>
-        <input type="text" id="f_sign" placeholder="Фамилия И.О.">
+        <label>Суть искового заявления (до 950 символов):</label>
+        <textarea id="f_text" rows="6" placeholder="Опишите суть заявления..."></textarea>
+        <div id="text-counter" style="font-size:0.8em;color:#666;margin-top:4px;">
+            0 / 950 символов
+        </div>
 
         <button class="btn-send" onclick="generateAndSend()">СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)</button>
     </div>
 
-    <div id="casesList">
+    <!-- СПИСОК ДЕЛ -->
+    <div class="card">
         <h3>📂 Дела, доступные для просмотра</h3>
         {% if cases %}
             {% for case in cases %}
-                <div class="card">
+                <div style="margin-bottom:20px;">
                     <p>
                         <strong>Дело {{ case.case_num }}</strong>
                         <span class="badge badge-court">{{ case.court_type }}</span>
@@ -264,116 +189,156 @@
     </div>
 </div>
 
-<!-- ==== НОВЫЙ ШАБЛОН A4 КАК НА ВТОРОМ СКРИНЕ ==== -->
+<!-- ====== ОРИГИНАЛЬНЫЙ ДОКУМЕНТ (ТВОЙ HTML) ====== -->
 <div id="paper-template">
-    <!-- Верхний правый блок -->
-    <div class="a4-top">
-        <div class="a4-top-right">
-            <div style="text-align:right;">В</div>
-            <div class="a4-row">
-                <span class="a4-court-line" id="p_court">УКАЗАТЬ САМ СУД</span>
-            </div>
-            <div class="a4-row" style="font-size:10pt;">
-                ( наименование судебной инстанции )
-            </div>
+    <!-- Весь твой HTML, НО с заменой текстов на span с ID -->
+    <div class="c13 doc-content">
+        <p class="c8"><span class="c17"></span></p>
+        <p class="c8"><span class="c3"></span></p>
 
-            <div class="a4-row" style="margin-top:20px;">
-                <span class="a4-label">Истец:</span>
-                <span class="a4-underline" id="p_istec">ФАМИЛИЯ ИМЯ ОТЧЕСТВО</span>
-            </div>
-            <div class="a4-row">
-                <span class="a4-label">Адрес:</span>
-                <span class="a4-underline" id="p_istec_addr">УКАЗАТЬ АДРЕС</span>
-            </div>
-            <div class="a4-row">
-                <span class="a4-label">Телефон:</span>
-                <span class="a4-underline" id="p_istec_phone">УКАЗАТЬ НОМЕР ТЕЛЕФОНА</span>
-            </div>
+        <table class="c5">
+            <tr class="c29">
+                <td class="c14"><p class="c10"><span class="c3">В</span></p></td>
+                <td class="c0">
+                    <p class="c24">
+                        <span class="c3" id="p_court1">Наименование Суда1</span>
+                    </p>
+                </td>
+            </tr>
+        </table>
 
-            <div class="a4-row" style="margin-top:20px;">
-                <span class="a4-label">Ответчик:</span>
-                <span class="a4-underline" id="p_otvet">ФАМИЛИЯ ИМЯ ОТЧЕСТВО</span>
-            </div>
-            <div class="a4-row">
-                <span class="a4-label">Адрес:</span>
-                <span class="a4-underline" id="p_otvet_addr">УКАЗАТЬ АДРЕС</span>
-            </div>
-            <div class="a4-row">
-                <span class="a4-label">Телефон:</span>
-                <span class="a4-underline" id="p_otvet_phone">УКАЗАТЬ НОМЕР ТЕЛЕФОНА</span>
-            </div>
-        </div>
-    </div>
+        <p class="c21 c33">
+            <span class="c34">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ( наименование судебной инстанции )</span>
+        </p>
 
-    <!-- Заголовок "Исковое заявление" -->
-    <div class="a4-title-block">
-        <div class="a4-title-main">Исковое заявление</div>
-        <div>о <span id="p_type">НАИМЕНОВАНИЕ ПРОЦЕССА</span></div>
-    </div>
+        <table class="c12">
+            <tr class="c22">
+                <td class="c26"><p class="c10"><span class="c3">Истец:</span></p></td>
+                <td class="c11"><p class="c24">
+                    <span class="c15" id="p_fio1">Фамилия Имя Отчество1</span>
+                </p></td>
+            </tr>
+            <tr class="c22">
+                <td class="c26"><p class="c10"><span class="c25">Адрес:</span></p></td>
+                <td class="c18"><p class="c24">
+                    <span class="c17" id="p_addr1">Адрес1</span>
+                </p></td>
+            </tr>
+            <tr class="c22">
+                <td class="c26"><p class="c10"><span class="c25">Телефон:</span></p></td>
+                <td class="c18"><p class="c24">
+                    <span class="c17" id="p_tel1">Телефон1</span>
+                </p></td>
+            </tr>
+        </table>
 
-    <!-- Основная часть -->
-    <div class="a4-body">
-        <div>Суть искового заявления.</div>
-        <div class="a4-body-text" id="p_text"></div>
-    </div>
+        <table class="c12">
+            <tr class="c22">
+                <td class="c26"><p class="c10"><span class="c3">Ответчик:</span></p></td>
+                <td class="c11"><p class="c24">
+                    <span class="c15" id="p_fio2">Фамилия Имя Отчество2</span>
+                </p></td>
+            </tr>
+            <tr class="c22">
+                <td class="c26"><p class="c10"><span class="c25">Адрес:</span></p></td>
+                <td class="c18"><p class="c24">
+                    <span class="c17" id="p_addr2">Адрес2</span>
+                </p></td>
+            </tr>
+            <tr class="c22">
+                <td class="c26"><p class="c10"><span class="c25">Телефон:</span></p></td>
+                <td class="c18"><p class="c24">
+                    <span class="c17" id="p_tel2">Телефон2</span>
+                </p></td>
+            </tr>
+        </table>
 
-    <!-- Низ страницы -->
-    <div class="a4-footer-block">
-        <div>
-            На законных основаниях, изложенных Конституцией и иными нормативно‑правовыми актами,
-            прошу Суд рассмотреть данное моё исковое заявление и принять необходимые меры по
-            отношению к данному делу.
-        </div>
+        <p class="c16"><span class="c3">Исковое заявление</span></p>
+        <p class="c16"><span class="c3">о <span id="p_process">НАИМЕНОВАНИЕ ПРОЦЕССА</span></span></p>
 
-        <div class="a4-footer-list">
-            <div>К Исковому заявлению прилагаю:</div>
-            <div>1. Копия документов, таких как: паспорт, медицинская карта, пакет лицензий</div>
-            <div>2. Квитанция об оплате госпошлины, согласно Закону «о принятии Исковых заявлений»</div>
-        </div>
-    </div>
+        <p class="c7"><span class="c32">Суть искового заявления.</span></p>
+        <!-- СЮДА ПОДСТАВЛЯЕМ СУТЬ (РУКОПИСНЫЙ ШРИФТ) -->
+        <p class="c7"><span class="c6" id="p_text"></span></p>
 
-    <!-- Подписи и дата -->
-    <div class="a4-sign-row">
-        <div class="a4-sign-col">
-            <div class="a4-sign-line"></div>
-            <div class="a4-sign-hint">( подпись )</div>
-        </div>
-        <div class="a4-sign-col">
-            <div class="a4-sign-line" id="p_sign"></div>
-            <div class="a4-sign-hint">( расшифровка )</div>
-        </div>
-        <div style="width: 35%; text-align:right; font-size:11pt;">
-            «<span id="p_day">__</span>» <span id="p_month">______________</span> 20__ г.
-        </div>
+        <p class="c7">
+            <span class="c6">
+                На законных основаниях, изложенных Конституцией и иными нормативно‑правовыми актами,
+                прошу Суд рассмотреть данное моё исковое заявление и принять необходимые меры по
+                отношению к данному делу.
+            </span>
+        </p>
+
+        <p class="c7">
+            <span class="c6">К Исковому заявлению прилагаю:</span>
+        </p>
+        <p class="c7 c27">
+            <span class="c6">
+                1. Копия документов, таких как: паспорт, медицинская карта, пакет лицензий
+            </span>
+        </p>
+        <p class="c7 c27">
+            <span class="c6">
+                2. Квитанция об оплате госпошлины, согласно Закону «о принятии Исковых заявлений»
+            </span>
+        </p>
+
+        <!-- Нижняя строка с датой и местами для подписи/расшифровки — БЕЗ автозаполнения -->
+        <p class="c7 c27">
+            <span class="c6">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                «___» _______________ 20 __ г.
+            </span>
+        </p>
+
+        <table class="c31">
+            <tr class="c35">
+                <td class="c20"><p class="c24"><span class="c6">( подпись )</span></p></td>
+                <td class="c30"></td>
+                <td class="c1"><p class="c24"><span class="c6">( расшифровка )</span></p></td>
+                <td class="c2"></td>
+                <td class="c19"></td>
+            </tr>
+        </table>
     </div>
 </div>
 
 <script>
-    // Связка полей формы с шаблоном A4
+    // Привязка полей формы к документу
     const bindings = [
-        ['f_court', 'p_court'],
-        ['f_istec', 'p_istec'],
-        ['f_istec_addr', 'p_istec_addr'],
-        ['f_istec_phone', 'p_istec_phone'],
-        ['f_otvet', 'p_otvet'],
-        ['f_otvet_addr', 'p_otvet_addr'],
-        ['f_otvet_phone', 'p_otvet_phone'],
-        ['f_type', 'p_type'],
-        ['f_text', 'p_text'],
-        ['f_sign', 'p_sign']
+        ['f_court1', 'p_court1'],
+        ['f_fio1',   'p_fio1'],
+        ['f_fio2',   'p_fio2'],
+        ['f_addr1',  'p_addr1'],
+        ['f_addr2',  'p_addr2'],
+        ['f_tel1',   'p_tel1'],
+        ['f_tel2',   'p_tel2'],
+        ['f_process','p_process']
     ];
 
     bindings.forEach(([from, to]) => {
         const src = document.getElementById(from);
         const dst = document.getElementById(to);
         if (!src || !dst) return;
-
-        // начальное значение
         dst.innerText = src.value;
-
         src.addEventListener('input', e => {
             dst.innerText = e.target.value;
         });
+    });
+
+    // Суть иска: ограничение 950 символов и рукописный текст
+    const textArea = document.getElementById('f_text');
+    const textDst  = document.getElementById('p_text');
+    const counter  = document.getElementById('text-counter');
+    const MAX_LEN = 950;
+
+    textArea.addEventListener('input', e => {
+        let val = e.target.value;
+        if (val.length > MAX_LEN) {
+            val = val.slice(0, MAX_LEN);
+            e.target.value = val;
+        }
+        textDst.innerText = val;
+        counter.textContent = `${val.length} / ${MAX_LEN} символов`;
     });
 
     async function generateAndSend() {
@@ -381,30 +346,24 @@
         btn.innerText = "Генерация PNG...";
         btn.disabled = true;
 
-        const requiredIds = ['f_court','f_istec','f_otvet','f_text','f_sign'];
-        for (const id of requiredIds) {
+        // Простая валидация
+        const required = ['f_court1','f_fio1','f_fio2','f_text'];
+        for (const id of required) {
             const el = document.getElementById(id);
             if (!el.value.trim()) {
-                alert("Пожалуйста, заполните все обязательные поля.");
+                alert("Заполните все обязательные поля (суд, ФИО истца/ответчика, суть).");
                 btn.disabled = false;
                 btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
                 return;
             }
         }
 
-        const now = new Date();
-        document.getElementById('p_day').innerText = now.getDate();
-        const months = [
-            "января","февраля","марта","апреля","мая","июня",
-            "июля","августа","сентября","октября","ноября","декабря"
-        ];
-        document.getElementById('p_month').innerText = months[now.getMonth()];
-
         const template = document.getElementById('paper-template');
         const canvas = await html2canvas(template, { scale: 2 });
         const imageData = canvas.toDataURL("image/png");
 
-        const courtType = document.getElementById('f_court').value;
+        // Для нумерации дела пользуемся типом суда из формы (то, что раньше court_type)
+        const courtType = document.getElementById('f_court1').value || "Верховный суд";
 
         try {
             const response = await fetch('/save_case_image', {

@@ -5,7 +5,7 @@
     <title>Судебная Система | Электронная канцелярия</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- Подключаем Roboto Serif -->
+    <!-- Roboto Serif для текста -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -48,7 +48,7 @@
             font-size: 0.85em;
             color: #555;
         }
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 10px;
             margin-top: 5px;
@@ -94,7 +94,7 @@
         .badge-new { background: #e3f2fd; color: #1565c0; }
         .badge-court { background: #fff3cd; color: #856404; }
 
-        /* Canvas для генерации PNG */
+        /* canvas для генерации PNG */
         #paper-canvas {
             position: absolute;
             left: -9999px;
@@ -120,11 +120,110 @@
         <div class="form-grid">
             <div>
                 <label>Наименование суда (Наименование Суда1):</label>
-                <input type="text" id="f_court1" placeholder="Указать суд">
+                <select id="f_court1">
+                    <option value="" selected disabled>Выберите суд</option>
+                    <option>Верховный Суд</option>
+                    <option>Кассационный Суд</option>
+                    <option>Суд по Уголовным делам</option>
+                    <option>Суд по Административным делам</option>
+                    <option>Суд по гражданским делам</option>
+                </select>
             </div>
             <div>
-                <label>НАИМЕНОВАНИЕ ПРОЦЕССА:</label>
-                <input type="text" id="f_process" placeholder="Например: расторжение брака">
+                <label>НАИМЕНОВАНИЕ ПРОЦЕССА (P8):</label>
+                <select id="f_process">
+                    <option value="" selected disabled>Выберите тип иска</option>
+
+                    <option disabled>1. Семейные споры</option>
+                    <option>расторжение брака (развод)</option>
+                    <option>признание брака недействительным</option>
+                    <option>взыскание алиментов (на детей, нетрудоспособного супруга, родителей)</option>
+                    <option>установление отцовства</option>
+                    <option>оспаривание отцовства (материнства)</option>
+                    <option>лишение родительских прав</option>
+                    <option>ограничение родительских прав</option>
+                    <option>определение места жительства ребенка</option>
+                    <option>определение порядка общения с ребенком (порядок встреч)</option>
+                    <option>устранение препятствий к общению с ребенком</option>
+                    <option>раздел совместно нажитого имущества супругов</option>
+                    <option>взыскание неустойки по алиментам</option>
+
+                    <option disabled>2. Жилищные споры</option>
+                    <option>признание права пользования жилым помещением</option>
+                    <option>вселение</option>
+                    <option>выселение</option>
+                    <option>устранение препятствий в пользовании имуществом</option>
+                    <option>признание утратившим право пользования жилым помещением</option>
+                    <option>определение порядка пользования жилым помещением (комнатой, квартирой)</option>
+                    <option>перевод прав и обязанностей по договору найма</option>
+                    <option>приватизация жилого помещения</option>
+                    <option>признание обмена жилыми помещениями недействительным</option>
+
+                    <option disabled>3. Имущественные споры, право собственности</option>
+                    <option>признание права собственности</option>
+                    <option>истребование имущества из чужого незаконного владения (виндикационный)</option>
+                    <option>устранение нарушений права, не связанных с лишением владения (негаторный)</option>
+                    <option>раздел имущества (долевая собственность)</option>
+                    <option>определение порядка пользования имуществом</option>
+                    <option>освобождение имущества от ареста (исключение из описи)</option>
+                    <option>признание самовольной постройки</option>
+
+                    <option disabled>4. Земельные споры</option>
+                    <option>признание права на земельный участок</option>
+                    <option>установление границ земельного участка (межевание)</option>
+                    <option>устранение препятствий в пользовании земельным участком</option>
+                    <option>истребование земельного участка из чужого незаконного владения</option>
+                    <option>признание недействительным акта органа власти о предоставлении земельного участка</option>
+
+                    <option disabled>5. Наследственные споры</option>
+                    <option>признание завещания недействительным</option>
+                    <option>признание наследника недостойным</option>
+                    <option>восстановление срока для принятия наследства</option>
+                    <option>признание факта принятия наследства</option>
+                    <option>раздел наследственного имущества</option>
+                    <option>признание права собственности на наследство</option>
+
+                    <option disabled>6. Договорные споры и обязательства</option>
+                    <option>взыскание задолженности (долга)</option>
+                    <option>взыскание неустойки (пени, штрафа)</option>
+                    <option>расторжение договора</option>
+                    <option>признание договора недействительным (ничтожным или оспоримым)</option>
+                    <option>понуждение заключить договор</option>
+                    <option>изменение условий договора</option>
+                    <option>возмещение убытков</option>
+                    <option>взыскание неосновательного обогащения</option>
+
+                    <option disabled>7. Защита прав потребителей</option>
+                    <option>возврат уплаченной суммы за товар/услугу</option>
+                    <option>замена товара ненадлежащего качества</option>
+                    <option>соразмерное уменьшение покупной цены</option>
+                    <option>безвозмездное устранение недостатков</option>
+                    <option>возмещение расходов на устранение недостатков</option>
+                    <option>взыскание неустойки за просрочку требований</option>
+                    <option>компенсация морального вреда</option>
+
+                    <option disabled>8. Трудовые споры</option>
+                    <option>восстановление на работе</option>
+                    <option>взыскание заработной платы</option>
+                    <option>взыскание компенсации за задержку зарплаты</option>
+                    <option>компенсация за неиспользованный отпуск</option>
+                    <option>признание увольнения незаконным</option>
+                    <option>изменение формулировки причины увольнения</option>
+                    <option>взыскание выходного пособия</option>
+
+                    <option disabled>9. Споры о возмещении вреда</option>
+                    <option>возмещение материального ущерба</option>
+                    <option>возмещение вреда, причиненного здоровью</option>
+                    <option>возмещение вреда в связи со смертью кормильца</option>
+                    <option>компенсация морального вреда</option>
+                    <option>возмещение вреда, причиненного вследствие недостатков товара/услуги</option>
+
+                    <option disabled>10. Споры с государственными органами</option>
+                    <option>признание незаконным решения, действия (бездействия) органа власти/чиновника</option>
+                    <option>оспаривание нормативного правового акта</option>
+                    <option>возложение обязанности совершить определенное действие (например, выдать документ)</option>
+                    <option>признание информации, распространяемой ответчиком, не соответствующей действительности</option>
+                </select>
             </div>
         </div>
 
@@ -210,26 +309,24 @@
         counter.textContent = `${v.length} / ${MAX_LEN} символов`;
     });
 
-    // Координаты точек P1..P13
+    // Координаты P1..P13
     const points = {
-        court1: {x:449, y:91},   // Наименование Суда1 (P1)
-        fio1:   {x:460, y:184},  // ФИО1 (истец) (P2)
-        addr1:  {x:468, y:219},  // Адрес1 (P3)
-        tel1:   {x:462, y:248},  // Телефон1 (P4)
-        fio2:   {x:459, y:301},  // ФИО2 (ответчик) (P5)
-        tel2:   {x:459, y:370},  // Телефон2 (P6)
-        addr2:  {x:464, y:336},  // Адрес2 (P7)
-        process:{x:285, y:441},  // НАИМЕНОВАНИЕ ПРОЦЕССА (P8)
-        sign:   {x:57,  y:985},  // подпись (P9)
-        signDec:{x:229, y:985},  // расшифровка (P10)
-        day:    {x:499, y:985},  // P11
-        month:  {x:538, y:985},  // P12
-        year:   {x:685, y:985}   // P13
+        court1: {x:449, y:91},
+        fio1:   {x:460, y:184},
+        addr1:  {x:468, y:219},
+        tel1:   {x:462, y:248},
+        fio2:   {x:459, y:301},
+        tel2:   {x:459, y:370},
+        addr2:  {x:464, y:336},
+        process:{x:285, y:441},
+        sign:   {x:57,  y:985},
+        day:    {x:499, y:989},
+        month:  {x:538, y:989},
+        year:   {x:685, y:988}
     };
 
-    // Фон
     const bgImage = new Image();
-    bgImage.src = "/static/court_template.png"; // положи PNG сюда
+    bgImage.src = "/static/court_template.png";
 
     function drawText(ctx, text, x, y, font, bold=false) {
         ctx.font = (bold ? 'bold ' : '') + font;
@@ -243,11 +340,11 @@
         btn.disabled = true;
         btn.textContent = "Генерация PNG...";
 
-        const required = ['f_court1','f_fio1','f_fio2','f_text','f_sign','f_day','f_month','f_year'];
+        const required = ['f_court1','f_process','f_fio1','f_fio2','f_text','f_sign','f_day','f_month','f_year'];
         for (const id of required) {
             const el = document.getElementById(id);
-            if (!el.value.trim()) {
-                alert("Заполните все обязательные поля.");
+            if (!el.value || !el.value.trim()) {
+                alert("Заполните все обязательные поля (суд, процесс, ФИО, суть, подпись, дату).");
                 btn.disabled = false;
                 btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
                 return;
@@ -263,11 +360,9 @@
         const canvas = document.getElementById('paper-canvas');
         const ctx = canvas.getContext('2d');
 
-        // Очищаем и рисуем фон
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-        // Собираем значения
         const v = {
             court1: document.getElementById('f_court1').value,
             fio1:   document.getElementById('f_fio1').value,
@@ -284,7 +379,6 @@
             year:   document.getElementById('f_year').value
         };
 
-        // Roboto Serif 11 для всех данных, кроме подписи/даты
         const mainFont = '11pt "Roboto Serif"';
         const tnFont   = '13pt "Times New Roman"';
 
@@ -306,15 +400,12 @@
         // НАИМЕНОВАНИЕ ПРОЦЕССА жирный
         drawText(ctx, v.process, points.process.x, points.process.y, mainFont, true);
 
-        // Суть заявления — рукописный эффект: используем тот же размер, но можно слегка варьировать буквы
-        // Упрощённо: рисуем обычным Roboto Serif 11 (если хочешь прямо «handwritten», нужно другой шрифт),
-        // но по заданию менять размер нельзя, а шрифт общий указан Roboto Serif.
-        // Поэтому просто переносим строки, чтобы не вылезало за правый край.
-        const maxWidth = 500; // примерная ширина строки
+        // Суть заявления — перенос строк
+        const maxWidth = 500;
         ctx.font = mainFont;
         ctx.fillStyle = "#000";
         ctx.textBaseline = "top";
-        const textX = 110;    // ориентировочная начальная позиция абзаца
+        const textX = 110;
         const textY = 470;
         const lineHeight = 18;
 
@@ -335,11 +426,8 @@
         }
         if (line) ctx.fillText(line, textX, y);
 
-        // Подпись и расшифровка: Times New Roman 13, обычный
-        drawText(ctx, v.sign, points.sign.x,    points.sign.y,    tnFont, false);
-        drawText(ctx, v.sign, points.signDec.x, points.signDec.y, tnFont, false);
-
-        // Дата: Times New Roman 13, обычный
+        // Подпись и дата — Times New Roman 13
+        drawText(ctx, v.sign, points.sign.x, points.sign.y, tnFont, false);
         drawText(ctx, v.day,   points.day.x,   points.day.y,   tnFont, false);
         drawText(ctx, v.month, points.month.x, points.month.y, tnFont, false);
         drawText(ctx, v.year,  points.year.x,  points.year.y,  tnFont, false);
@@ -375,4 +463,3 @@
 </script>
 </body>
 </html>
-

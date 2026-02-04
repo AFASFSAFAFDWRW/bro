@@ -58,7 +58,6 @@ COURT_PREFIXES = {
     'Суд по Уголовным и Административным делам': 'YD',
     'Суд по Уголовным делам': 'YD',
     'Суд по гражданским делам': 'GK',
-    'Суд по гражданским делам'.lower(): 'GK'
 }
 
 # ----------------- МОДЕЛИ БД -----------------
@@ -90,13 +89,23 @@ class DiscordQueue(db.Model):
 
 
 class DiscordMember(db.Model):
-    """
-    Локальный кэш участников и их ролей для панели ПВС.
-    """
     id = db.Column(db.Integer, primary_key=True)
     discord_id = db.Column(db.String(50), unique=True)
     username = db.Column(db.String(100))
-    roles = db.Column(db.Text)  # через запятую, имена ролей
+    roles = db.Column(db.Text)  # имена ролей через запятую
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class RolePermission(db.Model):
+    """
+    Виртуальные права для каждой Discord-роли по её ID.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    role_id = db.Column(db.String(50), unique=True)  # Discord role ID
+    role_name = db.Column(db.String(100))
+    can_close_cases = db.Column(db.Boolean, default=False)
+    can_view_all_cases = db.Column(db.Boolean, default=False)
+    can_create_cases = db.Column(db.Boolean, default=True)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -107,7 +116,6 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @tasks.loop(seconds=10)
 async def check_queue():
-    """Очередь ролей-дел."""
     with app.app_context():
         tasks_to_do = DiscordQueue.query.filter_by(status='pending').all()
         if not tasks_to_do:
@@ -131,15 +139,10 @@ async def check_queue():
 
 @tasks.loop(seconds=10)
 async def sync_members():
-    """
-    Периодически синкаем список участников и их ролей в БД
-    для панели ПВС.
-    """
     with app.app_context():
         guild = bot.get_guild(GUILD_ID)
         if not guild:
             return
-
         try:
             async for member in guild.fetch_members(limit=None):
                 role_names = [r.name for r in member.roles if r.name != "@everyone"]
@@ -221,10 +224,74 @@ def generate_case_number(prefix: str) -> str:
     return f"{prefix}-{next_num:03d}"
 
 
+def current_user() -> User | None:
+    if 'user_id' not in session:
+        return None
+    return User.query.filter_by(discord_id=session['user_id']).first()
+
+
+def is_pvs(user: User) -> bool:
+    return user and user.role == 'Председатель Верховного Суда'
+
+
+def get_role_permissions_map():
+    """
+    Возвращает словарь: role_id -> RolePermission
+    """
+    perms = RolePermission.query.all()
+    return {p.role_id: p for p in perms}
+
+
+def user_virtual_perms(discord_id: str):
+    """
+    Считаем суммарные виртуальные права пользователя по его ролям.
+    Если хоть одна роль даёт право — считаем, что право есть.
+    """
+    guild = bot.get_guild(GUILD_ID)
+    if not guild:
+        return {
+            "can_close_cases": False,
+            "can_view_all_cases": False,
+            "can_create_cases": True
+        }
+    perms_map = get_role_permissions_map()
+    result = {
+        "can_close_cases": False,
+        "can_view_all_cases": False,
+        "can_create_cases": True
+    }
+    try:
+        member = asyncio.run_coroutine_threadsafe(
+            guild.fetch_member(int(discord_id)), bot.loop
+        ).result()
+    except Exception:
+        return result
+
+    for r in member.roles:
+        p = perms_map.get(str(r.id))
+        if not p:
+            continue
+        if p.can_close_cases:
+            result["can_close_cases"] = True
+        if p.can_view_all_cases:
+            result["can_view_all_cases"] = True
+        if not p.can_create_cases:
+            # если хотя бы одна роль запрещает, запрещаем
+            result["can_create_cases"] = False
+    return result
+
+
 def get_cases_for_user(user: User):
     q = Case.query.order_by(Case.date.desc())
+    if not user:
+        return []
+    perms = user_virtual_perms(user.discord_id)
+    if perms["can_view_all_cases"]:
+        return q.all()
     if user.role == 'Гражданин':
         return q.filter_by(author_id=user.discord_id).all()
+
+    # Судьи по префиксам, но без флага "видеть всё"
     role_prefix_map = {
         'Кассационный судья': 'KA',
         'Председатель Верховного Суда': 'GH',
@@ -236,16 +303,6 @@ def get_cases_for_user(user: User):
         pref = role_prefix_map[user.role]
         return q.filter_by(prefix=pref).all()
     return q.filter_by(author_id=user.discord_id).all()
-
-
-def current_user() -> User | None:
-    if 'user_id' not in session:
-        return None
-    return User.query.filter_by(discord_id=session['user_id']).first()
-
-
-def is_pvs(user: User) -> bool:
-    return user and user.role in ('Председатель Верховного Суда',)
 
 
 # ----------------- ROUTES -----------------
@@ -324,6 +381,10 @@ def save_case_image():
     if not user:
         return jsonify({"status": "error", "message": "User not found"}), 404
 
+    perms = user_virtual_perms(user.discord_id)
+    if not perms["can_create_cases"]:
+        return jsonify({"status": "error", "message": "Создание дел запрещено правами роли"}), 403
+
     prefix = get_prefix_for_court(court_type)
     case_num = generate_case_number(prefix)
 
@@ -379,10 +440,6 @@ def admin_panel():
 
 @app.route('/api/members')
 def api_members():
-    """
-    Список участников + их роли для панели.
-    Обновляется каждые 5 сек на фронте.
-    """
     user = current_user()
     if not user or not is_pvs(user):
         return jsonify({"error": "forbidden"}), 403
@@ -400,10 +457,6 @@ def api_members():
 
 @app.route('/api/roles')
 def api_roles():
-    """
-    Список РОЛЕЙ сервера, которыми можно управлять.
-    Берём из текущего guild через бота.
-    """
     user = current_user()
     if not user or not is_pvs(user):
         return jsonify({"error": "forbidden"}), 403
@@ -412,24 +465,27 @@ def api_roles():
     if not guild:
         return jsonify([])
 
+    # подтащим существующие виртуальные права
+    perms_map = get_role_permissions_map()
+
     roles = []
     for r in sorted(guild.roles, key=lambda r: r.position, reverse=True):
         if r.name == "@everyone":
             continue
+        p = perms_map.get(str(r.id))
         roles.append({
             "id": r.id,
             "name": r.name,
-            "position": r.position
+            "position": r.position,
+            "can_close_cases": bool(p.can_close_cases) if p else False,
+            "can_view_all_cases": bool(p.can_view_all_cases) if p else False,
+            "can_create_cases": bool(p.can_create_cases) if p else True
         })
     return jsonify(roles)
 
 
 @app.route('/api/set_role', methods=['POST'])
 def api_set_role():
-    """
-    Выдать/снять роль участнику.
-    body: { discord_id, role_id, action: "add"|"remove" }
-    """
     user = current_user()
     if not user or not is_pvs(user):
         return jsonify({"error": "forbidden"}), 403
@@ -461,11 +517,50 @@ def api_set_role():
             print("set_role error:", e)
             return "error"
 
-    # запускаем корутину в уже работающем loop бота
     fut = asyncio.run_coroutine_threadsafe(do(), bot.loop)
     result = fut.result()
-
     return jsonify({"result": result})
+
+
+@app.route('/api/role_permissions', methods=['POST'])
+def api_role_permissions():
+    """
+    Обновить виртуальные права роли.
+    body: { role_id, role_name, can_close_cases, can_view_all_cases, can_create_cases }
+    """
+    user = current_user()
+    if not user or not is_pvs(user):
+        return jsonify({"error": "forbidden"}), 403
+
+    data = request.get_json(silent=True) or {}
+    role_id = data.get('role_id')
+    role_name = data.get('role_name') or ''
+    if not role_id:
+        return jsonify({"error": "bad_request"}), 400
+
+    can_close = bool(data.get('can_close_cases'))
+    can_view_all = bool(data.get('can_view_all_cases'))
+    can_create = bool(data.get('can_create_cases'))
+
+    rp = RolePermission.query.filter_by(role_id=str(role_id)).first()
+    if not rp:
+        rp = RolePermission(
+            role_id=str(role_id),
+            role_name=role_name,
+            can_close_cases=can_close,
+            can_view_all_cases=can_view_all,
+            can_create_cases=can_create
+        )
+        db.session.add(rp)
+    else:
+        rp.role_name = role_name
+        rp.can_close_cases = can_close
+        rp.can_view_all_cases = can_view_all
+        rp.can_create_cases = can_create
+        rp.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    return jsonify({"result": "ok"})
 
 
 def run_bot():

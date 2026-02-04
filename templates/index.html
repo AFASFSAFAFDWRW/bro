@@ -5,7 +5,7 @@
     <title>Судебная Система | Электронная канцелярия</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- Roboto Serif для текста -->
+    <!-- Roboto Serif для основного текста -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -94,7 +94,6 @@
         .badge-new { background: #e3f2fd; color: #1565c0; }
         .badge-court { background: #fff3cd; color: #856404; }
 
-        /* canvas для генерации PNG */
         #paper-canvas {
             position: absolute;
             left: -9999px;
@@ -130,7 +129,7 @@
                 </select>
             </div>
             <div>
-                <label>НАИМЕНОВАНИЕ ПРОЦЕССА (P8):</label>
+                <label>НАИМЕНОВАНИЕ ПРОЦЕССА:</label>
                 <select id="f_process">
                     <option value="" selected disabled>Выберите тип иска</option>
 
@@ -246,13 +245,12 @@
             </div>
         </div>
 
-        <label>Суть искового заявления (до 950 символов):</label>
-        <textarea id="f_text" rows="6" placeholder="Опишите суть заявления..."></textarea>
-        <div id="text-counter" style="font-size:0.8em;color:#666;margin-top:4px;">
-            0 / 950 символов
-        </div>
+        <label>Суть искового заявления (3 строки, каждая до ~80 символов):</label>
+        <input type="text" id="f_line1" placeholder="Строка 1">
+        <input type="text" id="f_line2" placeholder="Строка 2">
+        <input type="text" id="f_line3" placeholder="Строка 3">
 
-        <div class="form-grid">
+        <div class="form-grid" style="margin-top:15px;">
             <div>
                 <label>Подпись (Фамилия И.О.):</label>
                 <input type="text" id="f_sign" placeholder="Фамилия И.О.">
@@ -292,37 +290,26 @@
     </div>
 </div>
 
-<!-- Canvas, на котором рисуем фон + текст -->
 <canvas id="paper-canvas" width="795" height="1123"></canvas>
 
 <script>
-    const MAX_LEN = 950;
-    const textArea = document.getElementById('f_text');
-    const counter = document.getElementById('text-counter');
-
-    textArea.addEventListener('input', e => {
-        let v = e.target.value;
-        if (v.length > MAX_LEN) {
-            v = v.slice(0, MAX_LEN);
-            e.target.value = v;
-        }
-        counter.textContent = `${v.length} / ${MAX_LEN} символов`;
-    });
-
-    // Координаты P1..P13
+    // Координаты под твой PNG (примерно подогнаны под скрин)
     const points = {
-        court1: {x:449, y:91},
-        fio1:   {x:460, y:184},
-        addr1:  {x:468, y:219},
-        tel1:   {x:462, y:248},
-        fio2:   {x:459, y:301},
-        tel2:   {x:459, y:370},
-        addr2:  {x:464, y:336},
-        process:{x:285, y:441},
-        sign:   {x:57,  y:985},
-        day:    {x:499, y:989},
-        month:  {x:538, y:989},
-        year:   {x:685, y:988}
+        court1: {x:430, y:100},  // "В ________"
+        fio1:   {x:460, y:200},  // Истец ФИО
+        addr1:  {x:460, y:235},  // Истец адрес
+        tel1:   {x:460, y:270},  // Истец телефон
+        fio2:   {x:460, y:330},  // Ответчик ФИО
+        addr2:  {x:460, y:365},  // Ответчик адрес
+        tel2:   {x:460, y:400},  // Ответчик телефон
+        process:{x:305, y:470},  // после "о"
+        line1:  {x:105, y:520},  // суть строка 1
+        line2:  {x:105, y:545},  // суть строка 2
+        line3:  {x:105, y:570},  // суть строка 3
+        sign:   {x:100, y:990},  // подпись
+        day:    {x:520, y:990},  // «__» DD
+        month:  {x:565, y:990},  // месяц
+        year:   {x:700, y:990}   // год
     };
 
     const bgImage = new Image();
@@ -340,11 +327,11 @@
         btn.disabled = true;
         btn.textContent = "Генерация PNG...";
 
-        const required = ['f_court1','f_process','f_fio1','f_fio2','f_text','f_sign','f_day','f_month','f_year'];
+        const required = ['f_court1','f_process','f_fio1','f_fio2','f_sign','f_day','f_month','f_year'];
         for (const id of required) {
             const el = document.getElementById(id);
             if (!el.value || !el.value.trim()) {
-                alert("Заполните все обязательные поля (суд, процесс, ФИО, суть, подпись, дату).");
+                alert("Заполните суд, процесс, ФИО истца/ответчика, подпись и дату.");
                 btn.disabled = false;
                 btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
                 return;
@@ -372,7 +359,9 @@
             addr2:  document.getElementById('f_addr2').value,
             tel2:   document.getElementById('f_tel2').value,
             process:document.getElementById('f_process').value,
-            text:   document.getElementById('f_text').value,
+            line1:  document.getElementById('f_line1').value,
+            line2:  document.getElementById('f_line2').value,
+            line3:  document.getElementById('f_line3').value,
             sign:   document.getElementById('f_sign').value,
             day:    document.getElementById('f_day').value,
             month:  document.getElementById('f_month').value,
@@ -385,55 +374,32 @@
         // Наименование суда
         drawText(ctx, v.court1, points.court1.x, points.court1.y, mainFont, false);
 
-        // Истец (ФИО1 жирный)
+        // Истец (ФИО жирный)
         drawText(ctx, v.fio1,  points.fio1.x,  points.fio1.y,  mainFont, true);
-        // Адрес1, Телефон1 обычные
         drawText(ctx, v.addr1, points.addr1.x, points.addr1.y, mainFont, false);
         drawText(ctx, v.tel1,  points.tel1.x,  points.tel1.y,  mainFont, false);
 
-        // Ответчик (ФИО2 жирный)
+        // Ответчик (ФИО жирный)
         drawText(ctx, v.fio2,  points.fio2.x,  points.fio2.y,  mainFont, true);
-        // Телефон2, Адрес2 обычные
-        drawText(ctx, v.tel2,  points.tel2.x,  points.tel2.y,  mainFont, false);
         drawText(ctx, v.addr2, points.addr2.x, points.addr2.y, mainFont, false);
+        drawText(ctx, v.tel2,  points.tel2.x,  points.tel2.y,  mainFont, false);
 
-        // НАИМЕНОВАНИЕ ПРОЦЕССА жирный
+        // Наименование процесса (жирный)
         drawText(ctx, v.process, points.process.x, points.process.y, mainFont, true);
 
-        // Суть заявления — перенос строк
-        const maxWidth = 500;
-        ctx.font = mainFont;
-        ctx.fillStyle = "#000";
-        ctx.textBaseline = "top";
-        const textX = 110;
-        const textY = 470;
-        const lineHeight = 18;
+        // Суть – три строки
+        if (v.line1) drawText(ctx, v.line1, points.line1.x, points.line1.y, mainFont, false);
+        if (v.line2) drawText(ctx, v.line2, points.line2.x, points.line2.y, mainFont, false);
+        if (v.line3) drawText(ctx, v.line3, points.line3.x, points.line3.y, mainFont, false);
 
-        const words = v.text.split(' ');
-        let line = '';
-        let y = textY;
-        for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            const w = metrics.width;
-            if (w > maxWidth && n > 0) {
-                ctx.fillText(line, textX, y);
-                line = words[n] + ' ';
-                y += lineHeight;
-            } else {
-                line = testLine;
-            }
-        }
-        if (line) ctx.fillText(line, textX, y);
-
-        // Подпись и дата — Times New Roman 13
+        // Подпись и дата – Times New Roman 13
         drawText(ctx, v.sign, points.sign.x, points.sign.y, tnFont, false);
         drawText(ctx, v.day,   points.day.x,   points.day.y,   tnFont, false);
         drawText(ctx, v.month, points.month.x, points.month.y, tnFont, false);
         drawText(ctx, v.year,  points.year.x,  points.year.y,  tnFont, false);
 
         const imageData = canvas.toDataURL("image/png");
-        const courtType = v.court1 || "Верховный суд";
+        const courtType = v.court1 || "Верховный Суд";
 
         try {
             const response = await fetch('/save_case_image', {

@@ -5,8 +5,8 @@
     <title>Судебная Система | Электронная канцелярия</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- Рукописный шрифт только для сути заявления -->
-    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <!-- Подключаем Roboto Serif -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         body {
@@ -48,7 +48,7 @@
             font-size: 0.85em;
             color: #555;
         }
-        input, select, textarea {
+        input, textarea {
             width: 100%;
             padding: 10px;
             margin-top: 5px;
@@ -56,9 +56,7 @@
             border-radius: 5px;
             box-sizing: border-box;
         }
-        textarea {
-            resize: vertical;
-        }
+        textarea { resize: vertical; }
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -96,21 +94,11 @@
         .badge-new { background: #e3f2fd; color: #1565c0; }
         .badge-court { background: #fff3cd; color: #856404; }
 
-        /* === ОБЛАСТЬ A4: оригинальный документ === */
-        #paper-template {
-            width: 794px;   /* A4 при 96dpi */
-            height: 1123px;
-            background: #ffffff;
+        /* Canvas для генерации PNG */
+        #paper-canvas {
             position: absolute;
             left: -9999px;
             top: 0;
-            overflow: hidden;
-        }
-
-        /* Рукописный шрифт для сути, без изменения размера */
-        #p_text {
-            font-family: 'Patrick Hand', cursive !important;
-            font-size: 13pt !important; /* оставляем как в исходнике */
         }
     </style>
 </head>
@@ -125,14 +113,14 @@
 </div>
 
 <div class="container">
-    <!-- ФОРМА ЗАПОЛНЕНИЯ ПЕРЕМЕННЫХ -->
+    <!-- ФОРМА -->
     <div class="card">
         <h3 style="margin-top:0">Заполнение искового заявления</h3>
 
         <div class="form-grid">
             <div>
-                <label>Наименование суда:</label>
-                <input type="text" id="f_court1" placeholder="Указать сам суд">
+                <label>Наименование суда (Наименование Суда1):</label>
+                <input type="text" id="f_court1" placeholder="Указать суд">
             </div>
             <div>
                 <label>НАИМЕНОВАНИЕ ПРОЦЕССА:</label>
@@ -165,6 +153,22 @@
             0 / 950 символов
         </div>
 
+        <div class="form-grid">
+            <div>
+                <label>Подпись (Фамилия И.О.):</label>
+                <input type="text" id="f_sign" placeholder="Фамилия И.О.">
+            </div>
+            <div>
+                <label>Дата:</label>
+                <div style="display:flex;gap:6px;">
+                    <input type="text" id="f_day"   placeholder="01" style="width:60px;">
+                    <input type="text" id="f_month" placeholder="января" style="flex:1;">
+                    <input type="text" id="f_year"  placeholder="26" style="width:70px;">
+                </div>
+                <small style="color:#777;">Формат: 01 января 26</small>
+            </div>
+        </div>
+
         <button class="btn-send" onclick="generateAndSend()">СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)</button>
     </div>
 
@@ -189,181 +193,159 @@
     </div>
 </div>
 
-<!-- ====== ОРИГИНАЛЬНЫЙ ДОКУМЕНТ (ТВОЙ HTML) ====== -->
-<div id="paper-template">
-    <!-- Весь твой HTML, НО с заменой текстов на span с ID -->
-    <div class="c13 doc-content">
-        <p class="c8"><span class="c17"></span></p>
-        <p class="c8"><span class="c3"></span></p>
-
-        <table class="c5">
-            <tr class="c29">
-                <td class="c14"><p class="c10"><span class="c3">В</span></p></td>
-                <td class="c0">
-                    <p class="c24">
-                        <span class="c3" id="p_court1">Наименование Суда1</span>
-                    </p>
-                </td>
-            </tr>
-        </table>
-
-        <p class="c21 c33">
-            <span class="c34">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ( наименование судебной инстанции )</span>
-        </p>
-
-        <table class="c12">
-            <tr class="c22">
-                <td class="c26"><p class="c10"><span class="c3">Истец:</span></p></td>
-                <td class="c11"><p class="c24">
-                    <span class="c15" id="p_fio1">Фамилия Имя Отчество1</span>
-                </p></td>
-            </tr>
-            <tr class="c22">
-                <td class="c26"><p class="c10"><span class="c25">Адрес:</span></p></td>
-                <td class="c18"><p class="c24">
-                    <span class="c17" id="p_addr1">Адрес1</span>
-                </p></td>
-            </tr>
-            <tr class="c22">
-                <td class="c26"><p class="c10"><span class="c25">Телефон:</span></p></td>
-                <td class="c18"><p class="c24">
-                    <span class="c17" id="p_tel1">Телефон1</span>
-                </p></td>
-            </tr>
-        </table>
-
-        <table class="c12">
-            <tr class="c22">
-                <td class="c26"><p class="c10"><span class="c3">Ответчик:</span></p></td>
-                <td class="c11"><p class="c24">
-                    <span class="c15" id="p_fio2">Фамилия Имя Отчество2</span>
-                </p></td>
-            </tr>
-            <tr class="c22">
-                <td class="c26"><p class="c10"><span class="c25">Адрес:</span></p></td>
-                <td class="c18"><p class="c24">
-                    <span class="c17" id="p_addr2">Адрес2</span>
-                </p></td>
-            </tr>
-            <tr class="c22">
-                <td class="c26"><p class="c10"><span class="c25">Телефон:</span></p></td>
-                <td class="c18"><p class="c24">
-                    <span class="c17" id="p_tel2">Телефон2</span>
-                </p></td>
-            </tr>
-        </table>
-
-        <p class="c16"><span class="c3">Исковое заявление</span></p>
-        <p class="c16"><span class="c3">о <span id="p_process">НАИМЕНОВАНИЕ ПРОЦЕССА</span></span></p>
-
-        <p class="c7"><span class="c32">Суть искового заявления.</span></p>
-        <!-- СЮДА ПОДСТАВЛЯЕМ СУТЬ (РУКОПИСНЫЙ ШРИФТ) -->
-        <p class="c7"><span class="c6" id="p_text"></span></p>
-
-        <p class="c7">
-            <span class="c6">
-                На законных основаниях, изложенных Конституцией и иными нормативно‑правовыми актами,
-                прошу Суд рассмотреть данное моё исковое заявление и принять необходимые меры по
-                отношению к данному делу.
-            </span>
-        </p>
-
-        <p class="c7">
-            <span class="c6">К Исковому заявлению прилагаю:</span>
-        </p>
-        <p class="c7 c27">
-            <span class="c6">
-                1. Копия документов, таких как: паспорт, медицинская карта, пакет лицензий
-            </span>
-        </p>
-        <p class="c7 c27">
-            <span class="c6">
-                2. Квитанция об оплате госпошлины, согласно Закону «о принятии Исковых заявлений»
-            </span>
-        </p>
-
-        <!-- Нижняя строка с датой и местами для подписи/расшифровки — БЕЗ автозаполнения -->
-        <p class="c7 c27">
-            <span class="c6">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                «___» _______________ 20 __ г.
-            </span>
-        </p>
-
-        <table class="c31">
-            <tr class="c35">
-                <td class="c20"><p class="c24"><span class="c6">( подпись )</span></p></td>
-                <td class="c30"></td>
-                <td class="c1"><p class="c24"><span class="c6">( расшифровка )</span></p></td>
-                <td class="c2"></td>
-                <td class="c19"></td>
-            </tr>
-        </table>
-    </div>
-</div>
+<!-- Canvas, на котором рисуем фон + текст -->
+<canvas id="paper-canvas" width="795" height="1123"></canvas>
 
 <script>
-    // Привязка полей формы к документу
-    const bindings = [
-        ['f_court1', 'p_court1'],
-        ['f_fio1',   'p_fio1'],
-        ['f_fio2',   'p_fio2'],
-        ['f_addr1',  'p_addr1'],
-        ['f_addr2',  'p_addr2'],
-        ['f_tel1',   'p_tel1'],
-        ['f_tel2',   'p_tel2'],
-        ['f_process','p_process']
-    ];
-
-    bindings.forEach(([from, to]) => {
-        const src = document.getElementById(from);
-        const dst = document.getElementById(to);
-        if (!src || !dst) return;
-        dst.innerText = src.value;
-        src.addEventListener('input', e => {
-            dst.innerText = e.target.value;
-        });
-    });
-
-    // Суть иска: ограничение 950 символов и рукописный текст
-    const textArea = document.getElementById('f_text');
-    const textDst  = document.getElementById('p_text');
-    const counter  = document.getElementById('text-counter');
     const MAX_LEN = 950;
+    const textArea = document.getElementById('f_text');
+    const counter = document.getElementById('text-counter');
 
     textArea.addEventListener('input', e => {
-        let val = e.target.value;
-        if (val.length > MAX_LEN) {
-            val = val.slice(0, MAX_LEN);
-            e.target.value = val;
+        let v = e.target.value;
+        if (v.length > MAX_LEN) {
+            v = v.slice(0, MAX_LEN);
+            e.target.value = v;
         }
-        textDst.innerText = val;
-        counter.textContent = `${val.length} / ${MAX_LEN} символов`;
+        counter.textContent = `${v.length} / ${MAX_LEN} символов`;
     });
+
+    // Координаты точек P1..P13
+    const points = {
+        court1: {x:449, y:91},   // Наименование Суда1 (P1)
+        fio1:   {x:460, y:184},  // ФИО1 (истец) (P2)
+        addr1:  {x:468, y:219},  // Адрес1 (P3)
+        tel1:   {x:462, y:248},  // Телефон1 (P4)
+        fio2:   {x:459, y:301},  // ФИО2 (ответчик) (P5)
+        tel2:   {x:459, y:370},  // Телефон2 (P6)
+        addr2:  {x:464, y:336},  // Адрес2 (P7)
+        process:{x:285, y:441},  // НАИМЕНОВАНИЕ ПРОЦЕССА (P8)
+        sign:   {x:57,  y:985},  // подпись (P9)
+        signDec:{x:229, y:985},  // расшифровка (P10)
+        day:    {x:499, y:989},  // P11
+        month:  {x:538, y:989},  // P12
+        year:   {x:685, y:988}   // P13
+    };
+
+    // Фон
+    const bgImage = new Image();
+    bgImage.src = "/static/court_template.png"; // положи PNG сюда
+
+    function drawText(ctx, text, x, y, font, bold=false) {
+        ctx.font = (bold ? 'bold ' : '') + font;
+        ctx.fillStyle = "#000000";
+        ctx.textBaseline = "top";
+        ctx.fillText(text, x, y);
+    }
 
     async function generateAndSend() {
         const btn = document.querySelector('.btn-send');
-        btn.innerText = "Генерация PNG...";
         btn.disabled = true;
+        btn.textContent = "Генерация PNG...";
 
-        // Простая валидация
-        const required = ['f_court1','f_fio1','f_fio2','f_text'];
+        const required = ['f_court1','f_fio1','f_fio2','f_text','f_sign','f_day','f_month','f_year'];
         for (const id of required) {
             const el = document.getElementById(id);
             if (!el.value.trim()) {
-                alert("Заполните все обязательные поля (суд, ФИО истца/ответчика, суть).");
+                alert("Заполните все обязательные поля.");
                 btn.disabled = false;
-                btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
+                btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
                 return;
             }
         }
 
-        const template = document.getElementById('paper-template');
-        const canvas = await html2canvas(template, { scale: 2 });
-        const imageData = canvas.toDataURL("image/png");
+        await new Promise(resolve => {
+            if (bgImage.complete) return resolve();
+            bgImage.onload = resolve;
+            bgImage.onerror = () => { alert("Не удалось загрузить шаблон PNG"); resolve(); };
+        });
 
-        // Для нумерации дела пользуемся типом суда из формы (то, что раньше court_type)
-        const courtType = document.getElementById('f_court1').value || "Верховный суд";
+        const canvas = document.getElementById('paper-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Очищаем и рисуем фон
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+        // Собираем значения
+        const v = {
+            court1: document.getElementById('f_court1').value,
+            fio1:   document.getElementById('f_fio1').value,
+            addr1:  document.getElementById('f_addr1').value,
+            tel1:   document.getElementById('f_tel1').value,
+            fio2:   document.getElementById('f_fio2').value,
+            addr2:  document.getElementById('f_addr2').value,
+            tel2:   document.getElementById('f_tel2').value,
+            process:document.getElementById('f_process').value,
+            text:   document.getElementById('f_text').value,
+            sign:   document.getElementById('f_sign').value,
+            day:    document.getElementById('f_day').value,
+            month:  document.getElementById('f_month').value,
+            year:   document.getElementById('f_year').value
+        };
+
+        // Roboto Serif 11 для всех данных, кроме подписи/даты
+        const mainFont = '11pt "Roboto Serif"';
+        const tnFont   = '13pt "Times New Roman"';
+
+        // Наименование суда
+        drawText(ctx, v.court1, points.court1.x, points.court1.y, mainFont, false);
+
+        // Истец (ФИО1 жирный)
+        drawText(ctx, v.fio1,  points.fio1.x,  points.fio1.y,  mainFont, true);
+        // Адрес1, Телефон1 обычные
+        drawText(ctx, v.addr1, points.addr1.x, points.addr1.y, mainFont, false);
+        drawText(ctx, v.tel1,  points.tel1.x,  points.tel1.y,  mainFont, false);
+
+        // Ответчик (ФИО2 жирный)
+        drawText(ctx, v.fio2,  points.fio2.x,  points.fio2.y,  mainFont, true);
+        // Телефон2, Адрес2 обычные
+        drawText(ctx, v.tel2,  points.tel2.x,  points.tel2.y,  mainFont, false);
+        drawText(ctx, v.addr2, points.addr2.x, points.addr2.y, mainFont, false);
+
+        // НАИМЕНОВАНИЕ ПРОЦЕССА жирный
+        drawText(ctx, v.process, points.process.x, points.process.y, mainFont, true);
+
+        // Суть заявления — рукописный эффект: используем тот же размер, но можно слегка варьировать буквы
+        // Упрощённо: рисуем обычным Roboto Serif 11 (если хочешь прямо «handwritten», нужно другой шрифт),
+        // но по заданию менять размер нельзя, а шрифт общий указан Roboto Serif.
+        // Поэтому просто переносим строки, чтобы не вылезало за правый край.
+        const maxWidth = 500; // примерная ширина строки
+        ctx.font = mainFont;
+        ctx.fillStyle = "#000";
+        ctx.textBaseline = "top";
+        const textX = 110;    // ориентировочная начальная позиция абзаца
+        const textY = 470;
+        const lineHeight = 18;
+
+        const words = v.text.split(' ');
+        let line = '';
+        let y = textY;
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            const w = metrics.width;
+            if (w > maxWidth && n > 0) {
+                ctx.fillText(line, textX, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        if (line) ctx.fillText(line, textX, y);
+
+        // Подпись и расшифровка: Times New Roman 13, обычный
+        drawText(ctx, v.sign, points.sign.x,    points.sign.y,    tnFont, false);
+        drawText(ctx, v.sign, points.signDec.x, points.signDec.y, tnFont, false);
+
+        // Дата: Times New Roman 13, обычный
+        drawText(ctx, v.day,   points.day.x,   points.day.y,   tnFont, false);
+        drawText(ctx, v.month, points.month.x, points.month.y, tnFont, false);
+        drawText(ctx, v.year,  points.year.x,  points.year.y,  tnFont, false);
+
+        const imageData = canvas.toDataURL("image/png");
+        const courtType = v.court1 || "Верховный суд";
 
         try {
             const response = await fetch('/save_case_image', {
@@ -374,22 +356,20 @@
                     court_type: courtType
                 })
             });
-
             if (response.ok) {
                 const res = await response.json();
                 alert("Иск отправлен! Номер дела: " + res.case_num);
                 location.reload();
             } else {
-                console.error("SAVE ERROR:", await response.text());
-                alert("Ошибка сохранения на сервере!");
+                alert("Ошибка сохранения на сервере.");
                 btn.disabled = false;
-                btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
+                btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
             }
         } catch (e) {
             console.error(e);
-            alert("Ошибка сети!");
+            alert("Ошибка сети.");
             btn.disabled = false;
-            btn.innerText = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
+            btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
         }
     }
 </script>

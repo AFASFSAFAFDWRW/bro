@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель ПВС | Судебная система</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #eef2f7;
+        }
+        .nav {
+            background: #1a237e;
+            color: #fff;
+            padding: 12px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #c5a059;
+        }
+        .nav a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        h2 { margin: 10px 0 20px; }
+        .columns {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6px 4px;
+            text-align: left;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+        tr:hover td {
+            background: #f9fafb;
+        }
+        select, button {
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+        .btn {
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: #fff;
+        }
+        .badge-role {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 1px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            font-size: 0.75em;
+        }
+        .member-selected {
+            background: #dbeafe !important;
+        }
+        .muted { color:#6b7280; font-size:0.8em; }
+    </style>
+</head>
+<body>
+
+<div class="nav">
+    <div>
+        <strong>⚖️ Панель ПВС</strong>
+    </div>
+    <div>
+        <strong>{{ user.username }}</strong> ({{ user.role }})
+        <a href="/">К делам</a>
+        <a href="/logout">Выйти</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>Управление участниками и ролями Discord</h2>
+    <p class="muted">
+        Обновление в реальном времени каждые 5 секунд. Список ролей берётся с сервера Discord.
+        Из панели можно только выдавать и снимать роли у участников.
+    </p>
+
+    <div class="columns">
+        <!-- УЧАСТНИКИ -->
+        <div class="card">
+            <h3>Участники сервера</h3>
+            <table id="membersTable">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Роли</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- заполняется JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- РОЛИ -->
+        <div class="card">
+            <h3>Роли сервера</h3>
+            <p class="muted">
+                Выберите участника слева, затем роль и действие.
+            </p>
+            <div>
+                <label>Выбранный участник:</label>
+                <div id="selectedMember" class="muted">не выбран</div>
+            </div>
+            <div style="margin-top:10px;">
+                <label>Роль:</label>
+                <select id="roleSelect" style="width:100%;"></select>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+                <button class="btn btn-primary" onclick="changeRole('add')">Выдать роль</button>
+                <button class="btn btn-danger" onclick="changeRole('remove')">Снять роль</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let members = [];
+    let roles = [];
+    let selectedMemberId = null;
+
+    async function fetchMembers() {
+        try {
+            const resp = await fetch('/api/members');
+            if (!resp.ok) return;
+            members = await resp.json();
+            renderMembers();
+        } catch (e) {
+            console.error('members error', e);
+        }
+    }
+
+    async function fetchRoles() {
+        try {
+            const resp = await fetch('/api/roles');
+            if (!resp.ok) return;
+            roles = await resp.json();
+            renderRoles();
+        } catch (e) {
+            console.error('roles error', e);
+        }
+    }
+
+    function renderMembers() {
+        const tbody = document.querySelector('#membersTable tbody');
+        tbody.innerHTML = '';
+        members.forEach(m => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = m.discord_id;
+            if (m.discord_id === selectedMemberId) {
+                tr.classList.add('member-selected');
+            }
+            tr.onclick = () => {
+                selectedMemberId = m.discord_id;
+                document.querySelectorAll('#membersTable tbody tr')
+                    .forEach(row => row.classList.remove('member-selected'));
+                tr.classList.add('member-selected');
+                document.getElementById('selectedMember').innerText =
+                    `${m.username} (${m.discord_id})`;
+            };
+
+            const tdName = document.createElement('td');
+            tdName.textContent = m.username;
+
+            const tdRoles = document.createElement('td');
+            if (m.roles && m.roles.length) {
+                m.roles.forEach(r => {
+                    if (!r) return;
+                    const span = document.createElement('span');
+                    span.className = 'badge-role';
+                    span.textContent = r;
+                    tdRoles.appendChild(span);
+                });
+            } else {
+                tdRoles.innerHTML = '<span class="muted">нет ролей</span>';
+            }
+
+            tr.appendChild(tdName);
+            tr.appendChild(tdRoles);
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderRoles() {
+        const sel = document.getElementById('roleSelect');
+        sel.innerHTML = '';
+        roles.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = r.name;
+            sel.appendChild(opt);
+        });
+    }
+
+    async function changeRole(action) {
+        if (!selectedMemberId) {
+            alert('Выберите участника в таблице слева.');
+            return;
+        }
+        const roleId = document.getElementById('roleSelect').value;
+        if (!roleId) {
+            alert('Выберите роль.');
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/set_role', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    discord_id: selectedMemberId,
+                    role_id: roleId,
+                    action: action
+                })
+            });
+            const data = await resp.json();
+            if (data.result === 'ok') {
+                // сразу обновим список
+                await fetchMembers();
+            } else {
+                alert('Ошибка операции: ' + data.result);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Ошибка сети при изменении роли.');
+        }
+    }
+
+    // начальная загрузка
+    fetchMembers();
+    fetchRoles();
+    // автообновление
+    setInterval(fetchMembers, 5000);
+</script>
+</body>
+</html>

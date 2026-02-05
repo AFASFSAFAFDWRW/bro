@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Дело {{ case.case_num }}</title>
+    <style>
+        body{font-family:'Segoe UI',sans-serif;background:#eef2f7;margin:0;}
+        .nav{background:#1a237e;color:#fff;padding:12px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #c5a059;}
+        .nav a{color:#ffd700;text-decoration:none;font-weight:700;margin-left:14px;}
+        .container{max-width:1100px;margin:20px auto;padding:0 12px;}
+        .card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.08);margin-bottom:16px;}
+        label{display:block;margin-top:10px;font-weight:700;font-size:.85em;color:#374151;}
+        select, textarea, input{width:100%;padding:10px;margin-top:6px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;}
+        .btn{border:none;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:800;}
+        .btn-primary{background:#2563eb;color:#fff;}
+        .muted{color:#6b7280;font-size:.9em;}
+        img{width:100%;border:1px solid #e5e7eb;border-radius:12px;}
+    </style>
+</head>
+<body>
+<div class="nav">
+    <div><strong>⚖ ДЕЛО {{ case.case_num }}</strong></div>
+    <div>
+        <strong>{{ user.username }}</strong> ({{ user.role }})
+        <a href="/">К реестру</a>
+        <a href="/logout">Выйти</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="muted">
+            Суд: <strong>{{ case.court_type }}</strong> |
+            Статус: <strong id="statusText">{{ case.status }}</strong> |
+            Автор: <strong>{{ case.author_id }}</strong> |
+            Судья: <strong id="judgeText">{{ case.judge_id or "-" }}</strong>
+        </div>
+    </div>
+
+    <div class="card">
+        <img src="{{ case.image_data }}" alt="case_png">
+    </div>
+
+    {% if can_manage %}
+    <div class="card">
+        <h3>Управление делом</h3>
+
+        <label>Статус</label>
+        <select id="statusSelect">
+            {% for s in statuses %}
+                <option value="{{ s }}" {% if s==case.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Результат / решение</label>
+        <textarea id="resultText" rows="6" placeholder="Опиши решение...">{{ case.result or "" }}</textarea>
+
+        <button class="btn btn-primary" onclick="saveCase()">Сохранить</button>
+        <div class="muted" id="saveMsg" style="margin-top:8px;"></div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const CSRF = "{{ csrf }}";
+    async function saveCase(){
+        const status = document.getElementById('statusSelect').value;
+        const result = document.getElementById('resultText').value;
+
+        const resp = await fetch('/api/case/update', {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+                'X-CSRF': CSRF
+            },
+            body: JSON.stringify({
+                case_num: "{{ case.case_num }}",
+                status: status,
+                result: result
+            })
+        });
+
+        const data = await resp.json();
+        if(resp.ok && data.result === "ok"){
+            document.getElementById('saveMsg').innerText = "Сохранено.";
+            document.getElementById('statusText').innerText = status;
+        }else{
+            document.getElementById('saveMsg').innerText = "Ошибка: " + (data.error || 'unknown');
+        }
+    }
+</script>
+</body>
+</html>

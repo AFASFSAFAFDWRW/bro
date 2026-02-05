@@ -2,314 +2,252 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Судебная Система | Электронная канцелярия</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <!-- Roboto Serif для основного текста -->
+    <title>Канцелярия суда</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;700&display=swap" rel="stylesheet">
-
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #eef2f7;
-            margin: 0;
-            padding-bottom: 50px;
-        }
-        .nav {
-            background: #1a237e;
-            color: #fff;
-            padding: 15px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid #c5a059;
-        }
-        .nav a {
-            color: #ffd700;
-            text-decoration: none;
-            font-weight: bold;
-            margin-left: 15px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-            font-size: 0.85em;
-            color: #555;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        textarea { resize: vertical; }
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .btn-send {
-            background: #c5a059;
-            color: white;
-            padding: 15px;
-            border: none;
-            width: 100%;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 20px;
-            font-size: 1.1em;
-        }
-        .btn-send:disabled {
-            opacity: 0.6;
-            cursor: wait;
-        }
-        .case-image {
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 0.8em;
-            margin-left: 6px;
-        }
-        .badge-new { background: #e3f2fd; color: #1565c0; }
-        .badge-court { background: #fff3cd; color: #856404; }
+        body { font-family: 'Segoe UI', sans-serif; background:#eef2f7; margin:0; }
+        .nav { background:#1a237e; color:#fff; padding:12px 40px; display:flex; justify-content:space-between; align-items:center; border-bottom:4px solid #c5a059; }
+        .nav a { color:#ffd700; text-decoration:none; font-weight:700; margin-left:14px; }
+        .container { max-width:1100px; margin:20px auto; padding:0 12px; }
+        .grid { display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; }
+        .card { background:#fff; border-radius:12px; padding:18px; box-shadow:0 6px 18px rgba(0,0,0,.08); }
+        h2,h3{ margin:0 0 10px; }
+        label { display:block; margin-top:10px; font-weight:700; font-size:.85em; color:#374151; }
+        input, select { width:100%; padding:10px; margin-top:6px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; }
+        .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .muted { color:#6b7280; font-size:.85em; }
+        .btn { border:none; padding:12px 14px; border-radius:10px; cursor:pointer; font-weight:800; }
+        .btn-primary { background:#c5a059; color:#fff; width:100%; margin-top:14px; }
+        .btn-secondary { background:#e5e7eb; color:#111827; }
+        .btn-danger { background:#dc2626; color:#fff; }
+        .btn:disabled { opacity:.6; cursor:wait; }
+        table { width:100%; border-collapse:collapse; font-size:.92em; }
+        th, td { border-bottom:1px solid #e5e7eb; padding:8px 6px; text-align:left; vertical-align:top; }
+        th { background:#f8fafc; }
+        .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.78em; margin-left:6px; background:#eef2ff; color:#3730a3; }
+        .tag2 { background:#ecfeff; color:#155e75; }
+        .tag3 { background:#fff7ed; color:#9a3412; }
+        .actions { display:flex; gap:8px; flex-wrap:wrap; }
 
-        #paper-canvas {
-            position: absolute;
-            left: -9999px;
-            top: 0;
-        }
+        #paper-canvas { position:absolute; left:-9999px; top:0; }
+        #previewWrap { display:none; margin-top:12px; }
+        #previewImg { width:100%; border:1px solid #e5e7eb; border-radius:10px; }
     </style>
 </head>
 <body>
-
 <div class="nav">
-    <h2>⚖️ КАНЦЕЛЯРИЯ СУДА</h2>
+    <div><strong>⚖ КАНЦЕЛЯРИЯ СУДА</strong></div>
     <div>
         <strong>{{ user.username }}</strong> ({{ user.role }})
+        <a href="/admin">Панель ПВС</a>
         <a href="/logout">Выйти</a>
     </div>
 </div>
 
 <div class="container">
-    <!-- ФОРМА -->
-    <div class="card">
-        <h3 style="margin-top:0">Заполнение искового заявления</h3>
+    <div class="grid">
+        <!-- FORM -->
+        <div class="card">
+            <h3>Заполнение искового заявления</h3>
+            <div class="muted">Автосохранение черновика включено. PNG создаётся по шаблону.</div>
 
-        <div class="form-grid">
-            <div>
-                <label>Наименование суда (Наименование Суда1):</label>
-                <select id="f_court1">
-                    <option value="" selected disabled>Выберите суд</option>
-                    <option>Верховный Суд</option>
-                    <option>Кассационный Суд</option>
-                    <option>Суд по Уголовным делам</option>
-                    <option>Суд по Административным делам</option>
-                    <option>Суд по гражданским делам</option>
-                </select>
-            </div>
-            <div>
-                <label>НАИМЕНОВАНИЕ ПРОЦЕССА:</label>
-                <select id="f_process">
-                    <option value="" selected disabled>Выберите тип иска</option>
+            <label>Наименование суда</label>
+            <select id="f_court1">
+                <option value="" selected disabled>Выберите суд</option>
+                <option>Верховный Суд</option>
+                <option>Кассационный Суд</option>
+                <option>Суд по Уголовным делам</option>
+                <option>Суд по Административным делам</option>
+                <option>Суд по гражданским делам</option>
+            </select>
 
-                    <option disabled>1. Семейные споры</option>
-                    <option>расторжение брака (развод)</option>
-                    <option>признание брака недействительным</option>
-                    <option>взыскание алиментов (на детей, нетрудоспособного супруга, родителей)</option>
-                    <option>установление отцовства</option>
-                    <option>оспаривание отцовства (материнства)</option>
-                    <option>лишение родительских прав</option>
-                    <option>ограничение родительских прав</option>
-                    <option>определение места жительства ребенка</option>
-                    <option>определение порядка общения с ребенком (порядок встреч)</option>
-                    <option>устранение препятствий к общению с ребенком</option>
-                    <option>раздел совместно нажитого имущества супругов</option>
-                    <option>взыскание неустойки по алиментам</option>
+            <label>Наименование процесса</label>
+            <select id="f_process">
+                <option value="" selected disabled>Выберите тип иска</option>
+                <option disabled>1. Семейные споры</option>
+                <option>расторжение брака (развод)</option>
+                <option>признание брака недействительным</option>
+                <option>взыскание алиментов (на детей, нетрудоспособного супруга, родителей)</option>
+                <option>установление отцовства</option>
+                <option>оспаривание отцовства (материнства)</option>
+                <option>лишение родительских прав</option>
+                <option>ограничение родительских прав</option>
+                <option>определение места жительства ребенка</option>
+                <option>определение порядка общения с ребенком (порядок встреч)</option>
+                <option>устранение препятствий к общению с ребенком</option>
+                <option>раздел совместно нажитого имущества супругов</option>
+                <option>взыскание неустойки по алиментам</option>
 
-                    <option disabled>2. Жилищные споры</option>
-                    <option>признание права пользования жилым помещением</option>
-                    <option>вселение</option>
-                    <option>выселение</option>
-                    <option>устранение препятствий в пользовании имуществом</option>
-                    <option>признание утратившим право пользования жилым помещением</option>
-                    <option>определение порядка пользования жилым помещением (комнатой, квартирой)</option>
-                    <option>перевод прав и обязанностей по договору найма</option>
-                    <option>приватизация жилого помещения</option>
-                    <option>признание обмена жилыми помещениями недействительным</option>
+                <option disabled>2. Жилищные споры</option>
+                <option>признание права пользования жилым помещением</option>
+                <option>вселение</option>
+                <option>выселение</option>
+                <option>устранение препятствий в пользовании имуществом</option>
+                <option>признание утратившим право пользования жилым помещением</option>
+                <option>определение порядка пользования жилым помещением</option>
+                <option>перевод прав и обязанностей по договору найма</option>
+                <option>приватизация жилого помещения</option>
+                <option>признание обмена жилыми помещениями недействительным</option>
+            </select>
 
-                    <option disabled>3. Имущественные споры, право собственности</option>
-                    <option>признание права собственности</option>
-                    <option>истребование имущества из чужого незаконного владения (виндикационный)</option>
-                    <option>устранение нарушений права, не связанных с лишением владения (негаторный)</option>
-                    <option>раздел имущества (долевая собственность)</option>
-                    <option>определение порядка пользования имуществом</option>
-                    <option>освобождение имущества от ареста (исключение из описи)</option>
-                    <option>признание самовольной постройки</option>
-
-                    <option disabled>4. Земельные споры</option>
-                    <option>признание права на земельный участок</option>
-                    <option>установление границ земельного участка (межевание)</option>
-                    <option>устранение препятствий в пользовании земельным участком</option>
-                    <option>истребование земельного участка из чужого незаконного владения</option>
-                    <option>признание недействительным акта органа власти о предоставлении земельного участка</option>
-
-                    <option disabled>5. Наследственные споры</option>
-                    <option>признание завещания недействительным</option>
-                    <option>признание наследника недостойным</option>
-                    <option>восстановление срока для принятия наследства</option>
-                    <option>признание факта принятия наследства</option>
-                    <option>раздел наследственного имущества</option>
-                    <option>признание права собственности на наследство</option>
-
-                    <option disabled>6. Договорные споры и обязательства</option>
-                    <option>взыскание задолженности (долга)</option>
-                    <option>взыскание неустойки (пени, штрафа)</option>
-                    <option>расторжение договора</option>
-                    <option>признание договора недействительным (ничтожным или оспоримым)</option>
-                    <option>понуждение заключить договор</option>
-                    <option>изменение условий договора</option>
-                    <option>возмещение убытков</option>
-                    <option>взыскание неосновательного обогащения</option>
-
-                    <option disabled>7. Защита прав потребителей</option>
-                    <option>возврат уплаченной суммы за товар/услугу</option>
-                    <option>замена товара ненадлежащего качества</option>
-                    <option>соразмерное уменьшение покупной цены</option>
-                    <option>безвозмездное устранение недостатков</option>
-                    <option>возмещение расходов на устранение недостатков</option>
-                    <option>взыскание неустойки за просрочку требований</option>
-                    <option>компенсация морального вреда</option>
-
-                    <option disabled>8. Трудовые споры</option>
-                    <option>восстановление на работе</option>
-                    <option>взыскание заработной платы</option>
-                    <option>взыскание компенсации за задержку зарплаты</option>
-                    <option>компенсация за неиспользованный отпуск</option>
-                    <option>признание увольнения незаконным</option>
-                    <option>изменение формулировки причины увольнения</option>
-                    <option>взыскание выходного пособия</option>
-
-                    <option disabled>9. Споры о возмещении вреда</option>
-                    <option>возмещение материального ущерба</option>
-                    <option>возмещение вреда, причиненного здоровью</option>
-                    <option>возмещение вреда в связи со смертью кормильца</option>
-                    <option>компенсация морального вреда</option>
-                    <option>возмещение вреда, причиненного вследствие недостатков товара/услуги</option>
-
-                    <option disabled>10. Споры с государственными органами</option>
-                    <option>признание незаконным решения, действия (бездействия) органа власти/чиновника</option>
-                    <option>оспаривание нормативного правового акта</option>
-                    <option>возложение обязанности совершить определенное действие (например, выдать документ)</option>
-                    <option>признание информации, распространяемой ответчиком, не соответствующей действительности</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-grid">
-            <div>
-                <label>Истец — Фамилия Имя Отчество1:</label>
-                <input type="text" id="f_fio1" placeholder="Фамилия Имя Отчество">
-                <label>Адрес1:</label>
-                <input type="text" id="f_addr1" placeholder="Адрес истца">
-                <label>Телефон1:</label>
-                <input type="text" id="f_tel1" placeholder="Телефон истца">
-            </div>
-            <div>
-                <label>Ответчик — Фамилия Имя Отчество2:</label>
-                <input type="text" id="f_fio2" placeholder="Фамилия Имя Отчество">
-                <label>Адрес2:</label>
-                <input type="text" id="f_addr2" placeholder="Адрес ответчика">
-                <label>Телефон2:</label>
-                <input type="text" id="f_tel2" placeholder="Телефон ответчика">
-            </div>
-        </div>
-
-        <label>Суть искового заявления (3 строки, каждая до ~80 символов):</label>
-        <input type="text" id="f_line1" placeholder="Строка 1">
-        <input type="text" id="f_line2" placeholder="Строка 2">
-        <input type="text" id="f_line3" placeholder="Строка 3">
-
-        <div class="form-grid" style="margin-top:15px;">
-            <div>
-                <label>Подпись (Фамилия И.О.):</label>
-                <input type="text" id="f_sign" placeholder="Фамилия И.О.">
-            </div>
-            <div>
-                <label>Дата:</label>
-                <div style="display:flex;gap:6px;">
-                    <input type="text" id="f_day"   placeholder="01" style="width:60px;">
-                    <input type="text" id="f_month" placeholder="января" style="flex:1;">
-                    <input type="text" id="f_year"  placeholder="26" style="width:70px;">
+            <div class="row">
+                <div>
+                    <label>Истец (ФИО)</label>
+                    <input id="f_fio1" placeholder="Фамилия Имя Отчество">
+                    <label>Адрес истца</label>
+                    <input id="f_addr1" placeholder="Адрес">
+                    <label>Телефон истца</label>
+                    <input id="f_tel1" placeholder="Телефон">
                 </div>
-                <small style="color:#777;">Формат: 01 января 26</small>
+                <div>
+                    <label>Ответчик (ФИО)</label>
+                    <input id="f_fio2" placeholder="Фамилия Имя Отчество">
+                    <label>Адрес ответчика</label>
+                    <input id="f_addr2" placeholder="Адрес">
+                    <label>Телефон ответчика</label>
+                    <input id="f_tel2" placeholder="Телефон">
+                </div>
+            </div>
+
+            <label>Суть (3 строки)</label>
+            <input id="f_line1" placeholder="Строка 1 (до 80 символов)" maxlength="80">
+            <input id="f_line2" placeholder="Строка 2 (до 80 символов)" maxlength="80">
+            <input id="f_line3" placeholder="Строка 3 (до 80 символов)" maxlength="80">
+
+            <div class="row">
+                <div>
+                    <label>Подпись (Фамилия И.О.)</label>
+                    <input id="f_sign" placeholder="Фамилия И.О.">
+                </div>
+                <div>
+                    <label>Дата</label>
+                    <div class="row" style="grid-template-columns:80px 1fr 80px;">
+                        <input id="f_day" placeholder="01" maxlength="2">
+                        <input id="f_month" placeholder="января">
+                        <input id="f_year" placeholder="26" maxlength="2">
+                    </div>
+                    <div class="muted">Формат: 01 января 26</div>
+                </div>
+            </div>
+
+            <div class="actions" style="margin-top:12px;">
+                <button class="btn btn-secondary" onclick="previewPNG()">Предпросмотр</button>
+                <button class="btn btn-danger" onclick="clearDraft()">Очистить</button>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateAndSend()">СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)</button>
+
+            <div id="previewWrap">
+                <h3 style="margin-top:14px;">Предпросмотр PNG</h3>
+                <img id="previewImg" alt="preview">
             </div>
         </div>
 
-        <button class="btn-send" onclick="generateAndSend()">СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)</button>
-    </div>
+        <!-- REGISTRY -->
+        <div class="card">
+            <h3>Реестр дел</h3>
+            <div class="muted">Кликни «Открыть» чтобы увидеть дело и (если есть права) управлять статусом/решением.</div>
 
-    <!-- СПИСОК ДЕЛ -->
-    <div class="card">
-        <h3>📂 Дела, доступные для просмотра</h3>
-        {% if cases %}
-            {% for case in cases %}
-                <div style="margin-bottom:20px;">
-                    <p>
-                        <strong>Дело {{ case.case_num }}</strong>
-                        <span class="badge badge-court">{{ case.court_type }}</span>
-                        <span class="badge badge-new">{{ case.status }}</span><br>
-                        <small>Дата: {{ case.date.strftime('%d.%m.%Y %H:%M') }} UTC</small>
-                    </p>
-                    <img src="{{ case.image_data }}" class="case-image">
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>Пока нет доступных дел.</p>
-        {% endif %}
+            <label>Фильтр</label>
+            <input id="filterInput" placeholder="Поиск по номеру дела / статусу / суду" oninput="applyFilter()">
+
+            <div style="overflow:auto; margin-top:10px; max-height:760px;">
+                <table id="casesTable">
+                    <thead>
+                    <tr>
+                        <th>Дело</th>
+                        <th>Суд</th>
+                        <th>Статус</th>
+                        <th>Дата</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for case in cases %}
+                    <tr>
+                        <td><strong class="cnum">{{ case.case_num }}</strong></td>
+                        <td class="ccourt">{{ case.court_type }}</td>
+                        <td class="cstatus">{{ case.status }}</td>
+                        <td>{{ case.date.strftime('%d.%m.%Y %H:%M') }} UTC</td>
+                        <td><a href="/case/{{ case.case_num }}">Открыть</a></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if not cases %}
+            <p class="muted" style="margin-top:10px;">Пока нет доступных дел.</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 
 <canvas id="paper-canvas" width="795" height="1123"></canvas>
 
 <script>
-    // Координаты под PNG (уточнённые по твоему скрину)
+    const CSRF = "{{ csrf }}";
+
+    // AUTOSAVE DRAFT
+    const draftKeys = [
+        'f_court1','f_process','f_fio1','f_addr1','f_tel1','f_fio2','f_addr2','f_tel2',
+        'f_line1','f_line2','f_line3','f_sign','f_day','f_month','f_year'
+    ];
+
+    function loadDraft(){
+        draftKeys.forEach(id=>{
+            const v = localStorage.getItem('draft_'+id);
+            if(v !== null){
+                const el = document.getElementById(id);
+                if(el) el.value = v;
+            }
+        });
+    }
+    function saveDraft(){
+        draftKeys.forEach(id=>{
+            const el = document.getElementById(id);
+            if(el) localStorage.setItem('draft_'+id, el.value || '');
+        });
+    }
+    function clearDraft(){
+        draftKeys.forEach(id=>localStorage.removeItem('draft_'+id));
+        location.reload();
+    }
+    draftKeys.forEach(id=>{
+        document.addEventListener('input', (e)=>{
+            if(e.target && e.target.id === id) saveDraft();
+        });
+    });
+    loadDraft();
+
+    // FILTER
+    function applyFilter(){
+        const q = (document.getElementById('filterInput').value || '').toLowerCase();
+        document.querySelectorAll('#casesTable tbody tr').forEach(tr=>{
+            const cnum = tr.querySelector('.cnum')?.innerText.toLowerCase() || '';
+            const ccourt = tr.querySelector('.ccourt')?.innerText.toLowerCase() || '';
+            const cstatus = tr.querySelector('.cstatus')?.innerText.toLowerCase() || '';
+            tr.style.display = (cnum.includes(q) || ccourt.includes(q) || cstatus.includes(q)) ? '' : 'none';
+        });
+    }
+
+    // ---- CANVAS TEMPLATE COORDS (под твой PNG) ----
     const points = {
-        court1: {x:430, y:95},   // Суд
-        fio1:   {x:455, y:185},  // Истец ФИО
-        addr1:  {x:455, y:218},  // Истец адрес
-        tel1:   {x:455, y:251},  // Истец телефон
-        fio2:   {x:455, y:313},  // Ответчик ФИО
-        addr2:  {x:455, y:346},  // Ответчик адрес
-        tel2:   {x:455, y:379},  // Ответчик телефон
-        process:{x:305, y:445},  // наименование процесса после "о"
-        line1:  {x:105, y:520},  // суть строка 1
-        line2:  {x:105, y:545},  // суть строка 2
-        line3:  {x:105, y:570},  // суть строка 3
-        sign:   {x:105, y:968},  // подпись (над линией слева)
-        day:    {x:515, y:968},  // «__» DD
-        month:  {x:560, y:968},  // месяц
-        year:   {x:698, y:968}   // год (две последние цифры)
+        court1: {x:430, y:95},
+        fio1:   {x:455, y:185},
+        addr1:  {x:455, y:218},
+        tel1:   {x:455, y:251},
+        fio2:   {x:455, y:313},
+        addr2:  {x:455, y:346},
+        tel2:   {x:455, y:379},
+        process:{x:305, y:445},
+        line1:  {x:105, y:520},
+        line2:  {x:105, y:545},
+        line3:  {x:105, y:570},
+        sign:   {x:105, y:968},
+        day:    {x:515, y:968},
+        month:  {x:560, y:968},
+        year:   {x:698, y:968}
     };
 
     const bgImage = new Image();
@@ -322,109 +260,126 @@
         ctx.fillText(text, x, y);
     }
 
-    async function generateAndSend() {
-        const btn = document.querySelector('.btn-send');
-        btn.disabled = true;
-        btn.textContent = "Генерация PNG...";
-
-        const required = [
-            'f_court1','f_process','f_fio1','f_fio2',
-            'f_sign','f_day','f_month','f_year'
-        ];
-        for (const id of required) {
-            const el = document.getElementById(id);
-            if (!el.value || !el.value.trim()) {
-                alert("Заполните суд, процесс, ФИО истца/ответчика, подпись и дату.");
-                btn.disabled = false;
-                btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
-                return;
-            }
-        }
-
-        await new Promise(resolve => {
-            if (bgImage.complete) return resolve();
+    async function ensureBg(){
+        await new Promise(resolve=>{
+            if(bgImage.complete) return resolve();
             bgImage.onload = resolve;
-            bgImage.onerror = () => { alert("Не удалось загрузить шаблон PNG"); resolve(); };
+            bgImage.onerror = resolve;
         });
+    }
 
+    function getFormValues(){
+        return {
+            court1: document.getElementById('f_court1').value,
+            process:document.getElementById('f_process').value,
+            fio1: document.getElementById('f_fio1').value,
+            addr1:document.getElementById('f_addr1').value,
+            tel1: document.getElementById('f_tel1').value,
+            fio2: document.getElementById('f_fio2').value,
+            addr2:document.getElementById('f_addr2').value,
+            tel2: document.getElementById('f_tel2').value,
+            line1:document.getElementById('f_line1').value,
+            line2:document.getElementById('f_line2').value,
+            line3:document.getElementById('f_line3').value,
+            sign: document.getElementById('f_sign').value,
+            day: document.getElementById('f_day').value,
+            month: document.getElementById('f_month').value,
+            year: document.getElementById('f_year').value
+        }
+    }
+
+    function validate(v){
+        const required = ['court1','process','fio1','fio2','sign','day','month','year'];
+        for(const k of required){
+            if(!v[k] || !v[k].trim()) return false;
+        }
+        return true;
+    }
+
+    async function renderPNG(){
+        await ensureBg();
         const canvas = document.getElementById('paper-canvas');
         const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(bgImage,0,0,canvas.width,canvas.height);
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-
-        const v = {
-            court1: document.getElementById('f_court1').value,
-            fio1:   document.getElementById('f_fio1').value,
-            addr1:  document.getElementById('f_addr1').value,
-            tel1:   document.getElementById('f_tel1').value,
-            fio2:   document.getElementById('f_fio2').value,
-            addr2:  document.getElementById('f_addr2').value,
-            tel2:   document.getElementById('f_tel2').value,
-            process:document.getElementById('f_process').value,
-            line1:  document.getElementById('f_line1').value,
-            line2:  document.getElementById('f_line2').value,
-            line3:  document.getElementById('f_line3').value,
-            sign:   document.getElementById('f_sign').value,
-            day:    document.getElementById('f_day').value,
-            month:  document.getElementById('f_month').value,
-            year:   document.getElementById('f_year').value
-        };
-
+        const v = getFormValues();
         const mainFont = '11pt "Roboto Serif"';
-        const tnFont   = '13pt "Times New Roman"';
+        const tnFont = '13pt "Times New Roman"';
 
-        // Суд
         drawText(ctx, v.court1, points.court1.x, points.court1.y, mainFont, false);
 
-        // Истец (ФИО жирный, остальное обычное)
-        drawText(ctx, v.fio1,  points.fio1.x,  points.fio1.y,  mainFont, true);
-        drawText(ctx, v.addr1, points.addr1.x, points.addr1.y, mainFont, false);
-        drawText(ctx, v.tel1,  points.tel1.x,  points.tel1.y,  mainFont, false);
+        drawText(ctx, v.fio1, points.fio1.x, points.fio1.y, mainFont, true);
+        drawText(ctx, v.addr1,points.addr1.x,points.addr1.y,mainFont,false);
+        drawText(ctx, v.tel1, points.tel1.x, points.tel1.y, mainFont, false);
 
-        // Ответчик
-        drawText(ctx, v.fio2,  points.fio2.x,  points.fio2.y,  mainFont, true);
-        drawText(ctx, v.addr2, points.addr2.x, points.addr2.y, mainFont, false);
-        drawText(ctx, v.tel2,  points.tel2.x,  points.tel2.y,  mainFont, false);
+        drawText(ctx, v.fio2, points.fio2.x, points.fio2.y, mainFont, true);
+        drawText(ctx, v.addr2,points.addr2.x,points.addr2.y,mainFont,false);
+        drawText(ctx, v.tel2, points.tel2.x, points.tel2.y, mainFont, false);
 
-        // Наименование процесса (жирный, сразу после "о")
         drawText(ctx, v.process, points.process.x, points.process.y, mainFont, true);
 
-        // Суть – три строки
-        if (v.line1) drawText(ctx, v.line1, points.line1.x, points.line1.y, mainFont, false);
-        if (v.line2) drawText(ctx, v.line2, points.line2.x, points.line2.y, mainFont, false);
-        if (v.line3) drawText(ctx, v.line3, points.line3.x, points.line3.y, mainFont, false);
+        if(v.line1) drawText(ctx, v.line1, points.line1.x, points.line1.y, mainFont, false);
+        if(v.line2) drawText(ctx, v.line2, points.line2.x, points.line2.y, mainFont, false);
+        if(v.line3) drawText(ctx, v.line3, points.line3.x, points.line3.y, mainFont, false);
 
-        // Подпись и дата – Times New Roman 13
-        drawText(ctx, v.sign,  points.sign.x,  points.sign.y,  tnFont, false);
-        drawText(ctx, v.day,   points.day.x,   points.day.y,   tnFont, false);
+        drawText(ctx, v.sign, points.sign.x, points.sign.y, tnFont, false);
+        drawText(ctx, v.day, points.day.x, points.day.y, tnFont, false);
         drawText(ctx, v.month, points.month.x, points.month.y, tnFont, false);
-        drawText(ctx, v.year,  points.year.x,  points.year.y,  tnFont, false);
+        drawText(ctx, v.year, points.year.x, points.year.y, tnFont, false);
 
-        const imageData = canvas.toDataURL("image/png");
-        const courtType = v.court1 || "Верховный Суд";
+        return canvas.toDataURL("image/png");
+    }
 
-        try {
-            const response = await fetch('/save_case_image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+    async function previewPNG(){
+        const v = getFormValues();
+        if(!validate(v)){
+            alert("Заполни обязательные поля: суд, процесс, ФИО, подпись и дату.");
+            return;
+        }
+        const img = await renderPNG();
+        document.getElementById('previewImg').src = img;
+        document.getElementById('previewWrap').style.display = 'block';
+        window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+    }
+
+    async function generateAndSend(){
+        const btn = document.querySelector('.btn-primary');
+        const v = getFormValues();
+        if(!validate(v)){
+            alert("Заполни обязательные поля: суд, процесс, ФИО, подпись и дату.");
+            return;
+        }
+        btn.disabled = true;
+        btn.textContent = "Отправка...";
+
+        const imageData = await renderPNG();
+
+        try{
+            const resp = await fetch('/save_case_image', {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json',
+                    'X-CSRF': CSRF
+                },
                 body: JSON.stringify({
                     image: imageData,
-                    court_type: courtType
+                    court_type: v.court1
                 })
             });
-            if (response.ok) {
-                const res = await response.json();
-                alert("Иск отправлен! Номер дела: " + res.case_num);
+            const data = await resp.json();
+            if(resp.ok && data.status === 'success'){
+                alert("Иск отправлен. Номер: " + data.case_num);
+                localStorage.clear();
                 location.reload();
-            } else {
-                alert("Ошибка сохранения на сервере.");
+            }else{
+                alert("Ошибка: " + (data.message || 'unknown'));
                 btn.disabled = false;
                 btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
             }
-        } catch (e) {
+        }catch(e){
             console.error(e);
-            alert("Ошибка сети.");
+            alert("Ошибка сети");
             btn.disabled = false;
             btn.textContent = "СФОРМИРОВАТЬ И ОТПРАВИТЬ ИСК (PNG)";
         }
@@ -432,4 +387,3 @@
 </script>
 </body>
 </html>
-
